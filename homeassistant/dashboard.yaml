@@ -1,0 +1,46 @@
+# =====================================================================
+#  RotorWeb — tableau de bord Home Assistant (exemple)
+#
+#  1. Installe d'abord la carte boussole (voir LISEZMOI-HA.md).
+#  2. Remplace partout « rotorweb_ve2abc » par le nom de TON appareil :
+#     Paramètres → Appareils et services → MQTT → appareil « RotorWeb ... »
+#     (les identifiants des entités y sont affichés).
+#  3. Tableau de bord → ⋮ → Modifier → ⋮ → Éditeur de configuration brute,
+#     puis colle le bloc « views » (ou seulement la vue ci-dessous).
+# =====================================================================
+views:
+  - title: Rotor
+    path: rotor
+    icon: mdi:compass
+    cards:
+      # La carte boussole complète (trouve ses entités toute seule)
+      - type: custom:rotorweb-compass-card
+
+      - type: entities
+        title: État du rotor
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.rotorweb_ve2abc_k3ng_connecte
+          - entity: binary_sensor.rotorweb_ve2abc_arret_d_urgence_actif
+          - entity: binary_sensor.rotorweb_ve2abc_verrou_vent
+          - entity: sensor.rotorweb_ve2abc_plage_horaire
+          - entity: sensor.rotorweb_ve2abc_station_dx
+          - entity: sensor.rotorweb_ve2abc_vent
+          - entity: sensor.rotorweb_ve2abc_rafales
+          - entity: select.rotorweb_ve2abc_mode
+
+      - type: history-graph
+        title: Azimut (24 h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.rotorweb_ve2abc_azimut
+
+      - type: logbook
+        title: Journal du rotor
+        hours_to_show: 24
+        entities:
+          - event.rotorweb_ve2abc_notifications
+          - select.rotorweb_ve2abc_mode
+          - switch.rotorweb_ve2abc_en_operation
+          - binary_sensor.rotorweb_ve2abc_verrou_vent
+          - binary_sensor.rotorweb_ve2abc_arret_d_urgence_actif

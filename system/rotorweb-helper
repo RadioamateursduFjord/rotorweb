@@ -1,0 +1,91 @@
+#!/bin/bash
+# =====================================================================
+#  RotorWeb : les SEULES actions système permises au service (appelé par sudo).
+#  Installé par install.sh / update.sh dans /usr/local/sbin/rotorweb-helper (propriété de root).
+#
+#    poweroff | reboot | restart         arrêt / redémarrage
+#    update DOSSIER                      vérifie une mise à jour téléchargée puis l'installe
+#    apply                               (interne) installe la mise à jour vérifiée, avec retour arrière
+#
+#  Sécurité : la mise à jour est revérifiée ici avec la clé publique de root
+#  (/usr/local/share/rotorweb/release.pub) après copie dans un dossier de root ;
+#  le service ne peut donc pas faire exécuter autre chose qu'une version signée.
+# =====================================================================
+set -u
+APP_DIR=/opt/rotorweb
+SVC=rotorweb
+PUB=/usr/local/share/rotorweb/release.pub
+STAGE=/var/lib/rotorweb-update
+LOG=/var/log/rotorweb-update.log
+
+verify() {   # verify FICHIER SIGNATURE
+  openssl pkeyutl -verify -pubin -inkey "$PUB" -rawin -in "$1" -sigfile "$2" >/dev/null 2>&1 && return 0
+  python3 - "$1" "$2" "$PUB" <<'PY' 2>/dev/null
+import sys
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+k = load_pem_public_key(open(sys.argv[3], "rb").read())
+k.verify(open(sys.argv[2], "rb").read(), open(sys.argv[1], "rb").read())
+PY
+}
+
+result() {   # result OK(true/false) DE VERS DÉTAIL
+  python3 - "$@" <<'PY'
+import json, sys, time
+ok, frm, to, detail = sys.argv[1] == "true", sys.argv[2], sys.argv[3], sys.argv[4]
+json.dump({"ok": ok, "from": frm, "to": to, "detail": detail, "time": time.time()},
+          open("/opt/rotorweb/update-result.json", "w"), ensure_ascii=False)
+PY
+  chown rotorweb:rotorweb "$APP_DIR/update-result.json" 2>/dev/null || true
+}
+
+case "${1:-}" in
+  poweroff) exec /usr/bin/systemctl poweroff ;;
+  reboot)   exec /usr/bin/systemctl reboot ;;
+  restart)  exec /usr/bin/systemctl restart "$SVC" ;;
+
+  update)
+    SRC="${2:-}"
+    [[ -d "$SRC" && -f "$SRC/release.json" && -f "$SRC/release.json.sig" ]] || { echo "dossier de mise à jour invalide" >&2; exit 2; }
+    [[ -f "$PUB" ]] || { echo "clé publique absente ($PUB) : relance update.sh à la main" >&2; exit 2; }
+    rm -rf "$STAGE"; mkdir -p "$STAGE"; chmod 700 "$STAGE"
+    cp "$SRC/release.json" "$SRC/release.json.sig" "$STAGE/" || exit 2
+    verify "$STAGE/release.json" "$STAGE/release.json.sig" || { echo "signature invalide" >&2; rm -rf "$STAGE"; exit 3; }
+    ZIP=$(python3 -c "import json,sys;print(json.load(open('$STAGE/release.json'))['zip'])" 2>/dev/null)
+    SHA=$(python3 -c "import json,sys;print(json.load(open('$STAGE/release.json'))['sha256'])" 2>/dev/null)
+    [[ "$ZIP" =~ ^[A-Za-z0-9._-]+\.zip$ ]] || { echo "nom de fichier invalide" >&2; exit 3; }
+    cp "$SRC/$ZIP" "$STAGE/$ZIP" || exit 2
+    echo "$SHA  $STAGE/$ZIP" | sha256sum -c --status || { echo "SHA-256 différent : fichier refusé" >&2; rm -rf "$STAGE"; exit 3; }
+    command -v unzip >/dev/null || apt-get install -y -qq unzip >/dev/null 2>&1
+    mkdir "$STAGE/src" && unzip -q "$STAGE/$ZIP" -d "$STAGE/src" || { echo "zip illisible" >&2; exit 3; }
+    # L'installation tourne hors du service (update.sh l'arrête), dans sa propre unité systemd
+    systemd-run --unit="rotorweb-update-$(date +%s)" --collect --quiet /usr/local/sbin/rotorweb-helper apply \
+      || { echo "systemd-run impossible" >&2; exit 4; }
+    echo "installation lancée"
+    exit 0 ;;
+
+  apply)
+    # Seulement le contenu vérifié de $STAGE (dossier de root)
+    DIR=$(dirname "$(ls -1 "$STAGE"/src/*/update.sh 2>/dev/null | head -n 1)")
+    [[ -n "$DIR" && -f "$DIR/update.sh" ]] || exit 3
+    OLD=$(sed -n 's/^VERSION = "\(.*\)"/\1/p' "$APP_DIR/rotorweb/server.py")
+    NEW=$(sed -n 's/^VERSION = "\(.*\)"/\1/p' "$DIR/rotorweb/server.py")
+    {
+      echo "===== $(date '+%F %T') mise à jour v$OLD → v$NEW ====="
+      cd "$DIR" && RW_NONINTERACTIVE=1 bash ./update.sh </dev/null
+    } >>"$LOG" 2>&1
+    RC=$?
+    sleep 15
+    if [[ $RC -eq 0 ]] && systemctl is-active --quiet "$SVC"; then
+      result true "$OLD" "$NEW" ""
+      echo "===== OK =====" >>"$LOG"
+    else
+      echo "===== ÉCHEC (code $RC) : retour à v$OLD =====" >>"$LOG"
+      RW_NONINTERACTIVE=1 bash "$APP_DIR/update.sh" --rollback </dev/null >>"$LOG" 2>&1
+      result false "$OLD" "$NEW" "update.sh code $RC ; voir $LOG"
+      systemctl restart "$SVC" >/dev/null 2>&1
+    fi
+    rm -rf "$STAGE"
+    exit 0 ;;
+
+  *) echo "usage: $0 poweroff|reboot|restart|update DOSSIER" >&2; exit 2 ;;
+esac

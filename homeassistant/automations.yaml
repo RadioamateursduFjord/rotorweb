@@ -1,0 +1,113 @@
+# =====================================================================
+#  RotorWeb — automatisations Home Assistant (exemples)
+#
+#  Paramètres → Automatisations → Créer → ⋮ → Modifier en YAML,
+#  puis colle UNE automatisation à la fois (sans le tiret du début).
+#  Remplace « rotorweb_ve2abc » par le nom de ton appareil, et
+#  « mobile_app_mon_telephone » par ton service de notification.
+# =====================================================================
+
+# 1) Notifications RotorWeb sur le téléphone (application Home Assistant)
+#    Arrivée de l'antenne, alertes, verrou vent... (les mêmes que les courriels)
+- alias: "RotorWeb — notifications sur le téléphone"
+  mode: queued
+  triggers:
+    - trigger: state
+      entity_id: event.rotorweb_ve2abc_notifications
+      not_from: ["unavailable", "unknown"]
+  conditions:
+    - condition: template
+      value_template: "{{ trigger.to_state.state not in ['unavailable', 'unknown'] }}"
+  actions:
+    - action: notify.mobile_app_mon_telephone
+      data:
+        title: "{{ trigger.to_state.attributes.titre }}"
+        message: "{{ trigger.to_state.attributes.message }}"
+
+# 2) Alertes seulement (verrou vent, antenne non arrivée...) en notification prioritaire
+- alias: "RotorWeb — alertes importantes"
+  mode: queued
+  triggers:
+    - trigger: state
+      entity_id: event.rotorweb_ve2abc_notifications
+      not_from: ["unavailable", "unknown"]
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ trigger.to_state.attributes.event_type in ['alerte', 'verrou_vent', 'contournement'] }}
+  actions:
+    - action: notify.mobile_app_mon_telephone
+      data:
+        title: "⚠ {{ trigger.to_state.attributes.titre }}"
+        message: "{{ trigger.to_state.attributes.message }}"
+        data:
+          push:
+            interruption-level: time-sensitive
+          priority: high
+
+# 3) Contrôleur K3NG débranché depuis 5 minutes
+- alias: "RotorWeb — K3NG déconnecté"
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.rotorweb_ve2abc_k3ng_connecte
+      to: "off"
+      for: "00:05:00"
+  actions:
+    - action: notify.mobile_app_mon_telephone
+      data:
+        title: "Rotor : K3NG déconnecté"
+        message: "Le contrôleur K3NG ne répond plus depuis 5 minutes."
+
+# 4) Mettre le rotor hors opération quand tout le monde quitte la maison
+- alias: "RotorWeb — hors opération en quittant la maison"
+  triggers:
+    - trigger: numeric_state
+      entity_id: zone.home
+      below: 1
+  actions:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.rotorweb_ve2abc_en_operation
+
+# 5) POUR PLUS TARD : envoyer un anémomètre à RotorWeb
+#    Dans RotorWeb : onglet Horaire → Protection contre le vent →
+#    Source des données de vent = « Home Assistant ».
+#    Les valeurs doivent être en km/h (multiplier par 3.6 si en m/s).
+#    Le déclencheur toutes les 5 minutes garde les données « fraîches » :
+#    sans donnée depuis 30 minutes, RotorWeb garde l'état actuel du verrou.
+- alias: "RotorWeb — anémomètre vers le verrou vent"
+  mode: restart
+  triggers:
+    - trigger: state
+      entity_id:
+        - sensor.anemometre_vitesse
+        - sensor.anemometre_rafales
+    - trigger: time_pattern
+      minutes: "/5"
+  conditions:
+    - condition: template
+      value_template: "{{ states('sensor.anemometre_vitesse') | is_number }}"
+  actions:
+    - action: mqtt.publish
+      data:
+        topic: rotorweb/rotorweb_ve2abc/wind/input
+        payload: >-
+          {"speed": {{ states('sensor.anemometre_vitesse') | float(0) }},
+           "gust": {{ states('sensor.anemometre_rafales') | float(states('sensor.anemometre_vitesse') | float(0)) }},
+           "dir": {{ states('sensor.anemometre_direction') | float(0) }}}
+
+# 6) (v1.7) Passage satellite : avertissement 10 minutes avant le prochain bon passage
+#    Active d'abord les alertes dans RotorWeb : Passages satellites → Alertes → Dans Home Assistant.
+#    RotorWeb envoie alors l'événement « passage_sat » ; cette automatisation le relaie sur le téléphone.
+- alias: "RotorWeb — passage satellite"
+  mode: queued
+  triggers:
+    - trigger: state
+      entity_id: event.rotorweb_ve2abc_notifications
+      attribute: event_type
+      to: "passage_sat"
+  actions:
+    - action: notify.mobile_app_mon_telephone
+      data:
+        title: "{{ state_attr('event.rotorweb_ve2abc_notifications', 'titre') }}"
+        message: "{{ state_attr('event.rotorweb_ve2abc_notifications', 'message') }}"

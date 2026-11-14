@@ -1,0 +1,4 @@
+aiohttp>=3.9
+pyserial>=3.5
+paho-mqtt>=2.0
+ephem>=4.1

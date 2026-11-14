@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RotorWeb</title>
+<meta name="theme-color" content="#0e1319">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rotor">
+<style>
+/* ===== Couleurs : modifie ces variables pour adapter le thème (ex. couleurs AssoRF) ===== */
+:root{
+  --bg:#0e1319; --panel:#161e28; --panel2:#1d2733; --line:#2a3747;
+  --text:#e6edf3; --muted:#8b9bb0;
+  --accent:#2f81f7; --accent-txt:#fff;
+  --ok:#2ea043; --warn:#d29922; --bad:#e5484d;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 14px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-txt);font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600}
+.muted{color:var(--muted)} .hidden{display:none!important}
+
+header{position:sticky;top:0;z-index:58;display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(14,19,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:18px;letter-spacing:.02em}
+.brand small{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+.pill{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.ok{color:var(--ok);border-color:var(--ok)} .pill.bad{color:var(--bad);border-color:var(--bad)}
+.spacer{flex:1}
+#estop{background:var(--bad);border:2px solid #ff8a8d;color:#fff;font-weight:800;letter-spacing:.04em;padding:12px 18px;border-radius:12px;box-shadow:0 0 0 0 rgba(229,72,77,.6)}
+#estop:active{transform:scale(.97)}
+#estop .sm{display:none}
+.iconbtn{padding:8px 12px;font-size:18px;line-height:1}
+
+.banner{margin:12px 16px 0;padding:12px 16px;border-radius:var(--radius);display:flex;align-items:center;gap:12px;font-weight:600;border:1px solid var(--line);background:var(--panel)}
+.banner .dot{width:12px;height:12px;border-radius:50%;background:var(--muted);flex:none}
+.banner.op{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--panel))}.banner.op .dot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.banner.off .dot{background:var(--muted)}
+.banner.estop{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 22%,var(--panel));animation:pulse 1.2s infinite}.banner.estop .dot{background:var(--bad)}
+.banner.disc{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--panel))}.banner.disc .dot{background:var(--warn)}
+.banner button{margin-left:auto}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(229,72,77,.25)}}
+
+/* Suivi */
+#sky{width:100%;max-width:420px;display:block;margin:0 auto}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.tiles div{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.tiles b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.tiles span{font-size:12px;color:var(--muted)}
+.passes{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+.passes th,.passes td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.passes th{color:var(--muted);font-weight:600;font-size:12px}
+.passes tr.now td{color:var(--ok)}
+.passes button{padding:5px 9px;font-size:12.5px}
+.tblwrap{overflow-x:auto;max-width:100%}
+.page.cards>.card{min-width:0}
+textarea{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;width:100%;min-height:70px}
+/* Mise en page : menu latéral + pages */
+.layout{display:flex;align-items:flex-start}
+#drawer{width:230px;flex:none;position:sticky;top:61px;height:calc(100vh - 61px);overflow:auto;border-right:1px solid var(--line);padding:12px 10px;display:flex;flex-direction:column}
+.content{flex:1;min-width:0}
+main{padding:14px 16px 24px}
+.page{display:none}
+.page.on{display:block}
+.page.cards.on{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
+.menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:500}
+.menu a span{width:22px;text-align:center}
+.menu a:hover{background:var(--panel)}
+.menu a.on{background:var(--panel2);color:var(--text);font-weight:600}
+.menusub{margin:2px 0 6px}
+.menusub a{padding:7px 12px 7px 44px;font-size:14px}
+.drawerfoot{margin-top:auto;padding:12px;color:var(--muted);font-size:11.5px;line-height:1.5}
+#scrim{display:none}
+#menuBtn{display:none}
+.setlist{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.setlist a{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);color:var(--text);text-decoration:none}
+.setlist a:hover{border-color:var(--accent)}
+.setlist .ic{font-size:22px;width:30px;text-align:center}
+.setlist .tx{flex:1;min-width:0}.setlist .tx b{display:block}.setlist .tx small{color:var(--muted);font-size:13px}
+.setlist .chev{color:var(--muted);font-size:22px}
+.secinfo p{font-size:14px;margin:10px 0}.secinfo a{color:var(--accent)}
+@media (max-width:1100px) and (min-width:761px){ .dash .m-third{grid-column:span 3} }
+@media (max-width:1000px){
+  #menuBtn{display:inline-block}
+  #drawer{position:fixed;top:0;left:0;bottom:0;height:100vh;z-index:60;background:var(--bg);width:270px;transform:translateX(-105%);transition:transform .2s ease;padding-top:calc(16px + env(safe-area-inset-top))}
+  #drawer.open{transform:none;box-shadow:0 0 40px rgba(0,0,0,.6)}
+  #scrim.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.card.big{grid-row:span 3}
+.card.wide{grid-column:1/-1}
+#console{height:calc(100vh - 300px);min-height:260px}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.row>input{flex:1}
+
+/* Boussole */
+#compass{width:100%;max-width:460px;display:block;margin:0 auto;cursor:crosshair;touch-action:manipulation}
+#compass .face{fill:var(--panel2);stroke:var(--line);stroke-width:1.5}
+#compass .tk{stroke:var(--muted);stroke-width:.8}#compass .tk.l{stroke:var(--text);stroke-width:1.6}
+#compass .lbl{fill:var(--muted);font-size:9px;text-anchor:middle;dominant-baseline:central}
+#compass .lbl.cardinal{fill:var(--text);font-size:13px;font-weight:700}
+#compass .needle{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
+#compass .needle-tail{stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+#compass .hub{fill:var(--accent)}
+#compass .beam{fill:var(--accent);opacity:.12}
+#compass .tgt{fill:var(--warn)}
+#compass .ghost{stroke:var(--text);stroke-width:1;stroke-dasharray:3 3;opacity:.5}
+#compass .ghosttxt{fill:var(--text);font-size:10px;text-anchor:middle}
+#needle,#target,#ghostg{transition:transform .45s ease-out}
+#ghostg{transition:none}
+.readout{text-align:center;margin-top:4px}
+.readout .az{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.readout .sub{color:var(--muted);min-height:1.3em;margin-top:4px}
+.manual button{flex:1;padding:14px 8px;font-weight:600}
+.manual .stop{background:var(--warn);border-color:var(--warn);color:#111}
+.manual .hold.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Interrupteurs */
+.sw{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.sw:last-child{border-bottom:0}
+.sw .t{flex:1}.sw .t b{display:block}.sw .t span{font-size:13px;color:var(--muted)}
+.toggle{position:relative;width:52px;height:30px;flex:none}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle i{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.2s;cursor:pointer}
+.toggle i:before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+i{background:var(--ok)}
+.toggle.red input:checked+i{background:var(--bad)}
+.toggle input:checked+i:before{transform:translateX(22px)}
+
+/* Grid */
+.gridinfo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.gridinfo div{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.gridinfo b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.gridinfo span{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip .x{color:var(--muted);padding:0 2px}.chip .x:hover{color:var(--bad)}
+.chip small{color:var(--muted)}
+
+/* WSJT-X */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv span{color:var(--muted)}
+
+/* Console trafic */
+.conhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer}
+.conhead h2{margin:0}
+.conhead .counts{font-size:12px;color:var(--muted)}
+.conctl{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:12px 0 8px;font-size:13px}
+.conctl label{display:inline-flex;gap:5px;align-items:center;cursor:pointer;color:var(--muted)}
+.conctl button{padding:6px 10px;font-size:13px}
+#console{height:260px;overflow:auto;background:#070a0e;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+#console .l{white-space:pre-wrap;word-break:break-all}
+#console .tm{color:#5c6b7d}
+#console .virtual{color:#7cc4ff}#console .rotctld{color:#c7a0ff}#console .wsjtx{color:#ffd166}
+#console .k3ng{color:#7ee2a8}#console .web{color:#e6edf3}#console .system{color:#8b9bb0}
+#console .schedule{color:#5fd4d4}#console .track{color:#b6f36b}#console .ha{color:#41bdf5}#console .wind{color:#ff9f6e}
+#console .blocked{color:var(--bad);font-weight:600}
+.collapsed .conbody{display:none}
+
+/* Toasts / dialogue */
+#toasts{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;width:min(420px,92vw)}
+.toast{padding:12px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.warn{border-color:var(--warn)}.toast.error{border-color:var(--bad)}.toast.ok{border-color:var(--ok)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:20px;width:min(380px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog label{display:block;margin:10px 0 4px;color:var(--muted);font-size:13px}
+dialog input{width:100%}
+footer{padding:0 16px 24px;color:var(--muted);font-size:12px;text-align:center}
+/* Modes */
+.modes{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
+.modes button{flex:1;border:0;background:none;padding:10px 2px;font-weight:600;color:var(--muted);font-size:14px;min-width:0}
+.modes button.on{background:var(--accent);color:#fff}
+.modeinfo{font-size:13px;text-align:center;min-height:1.2em;margin:-4px 0 8px}
+.banner.wind{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,var(--panel))}.banner.wind .dot{background:var(--bad)}
+.banner.ovr{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 22%,var(--panel))}.banner.ovr .dot{background:var(--warn)}
+/* Horaires */
+.sched{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:8px;background:var(--panel2)}
+.sched.active{border-color:var(--ok);box-shadow:inset 3px 0 0 var(--ok)}
+.sched.off{opacity:.5}
+.sched .info{flex:1;min-width:0}.sched .info b{font-variant-numeric:tabular-nums}
+.sched .info div{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.sched button{padding:6px 9px}
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.days label{flex:1;min-width:36px}
+.days input{display:none}
+.days span{display:block;text-align:center;padding:8px 0;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-weight:600;color:var(--muted)}
+.days input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.wx{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wx div{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+.wx b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.wx span{font-size:12px;color:var(--muted)}
+.wx .over b{color:var(--bad)}
+.field{display:grid;grid-template-columns:1fr 110px;align-items:center;gap:8px;margin-top:8px;font-size:14px}
+.field input{width:100%}
+/* Réglage */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 label,.lab{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+.grid2 input,.grid2 select,.full-w{width:100%}
+.step{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:8px;background:var(--panel2)}
+.step .n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;flex:none;font-size:13px}
+.step .n.done{background:var(--ok)}
+.step .tx{flex:1;font-size:14px}
+.rawbox{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.rawbox div{background:var(--panel2);border-radius:10px;padding:8px;text-align:center}
+.rawbox b{display:block;font-size:20px;font-variant-numeric:tabular-nums}.rawbox span{font-size:12px;color:var(--muted)}
+.ptable{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.ptable td,.ptable th{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+.ptable th{color:var(--muted);font-weight:600}
+#courseBar{width:100%;display:block;margin-top:8px}
+.hdraz{display:none;font-weight:700;font-variant-numeric:tabular-nums;font-size:18px}
+#tabbar{display:none}
+/* Tableau de bord à modules */
+.page.dash.on{display:grid;gap:14px;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-flow:row dense;align-items:start}
+.dash>.card{min-width:0}
+.dash .m-full{grid-column:span 6}.dash .m-half{grid-column:span 3}.dash .m-third{grid-column:span 2}
+.dash .m-compass{grid-column:span 3;grid-row:span 4}
+.dashbar{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-bottom:-6px}
+.dashbar button{padding:6px 12px;font-size:13px}
+.modhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}.modhead h2{margin:0;flex:1}
+.modhead a{color:var(--muted);font-size:13px;text-decoration:none}.modhead a:hover{color:var(--accent)}
+.minicon{background:#070a0e;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:auto}
+.minicon .l{white-space:pre-wrap;word-break:break-all}
+.minicon.v-mini{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.minicon.v-mini .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.minicon.v-full{height:320px}
+.minicon .tm{color:#5c6b7d}
+.minicon .virtual{color:#7cc4ff}.minicon .rotctld{color:#c7a0ff}.minicon .wsjtx{color:#ffd166}.minicon .k3ng{color:#7ee2a8}
+.minicon .system{color:#8b9bb0}.minicon .schedule{color:#5fd4d4}.minicon .track{color:#b6f36b}.minicon .ha{color:#41bdf5}.minicon .wind{color:#ff9f6e}
+.minicon .blocked{color:var(--bad);font-weight:600}
+.modlist{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto;margin:8px 0}
+.modrow{display:flex;align-items:center;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.modrow .nm{flex:1;min-width:0;font-size:14px}.modrow select{padding:6px;font-size:13px}.modrow button{padding:5px 9px}
+.modrow.fixed{opacity:.7}
+.modrow input[type=checkbox]{width:20px;height:20px}
+dialog.wide{width:min(560px,94vw)}
+.lkres{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.lkres button{text-align:left;font-size:13.5px;padding:8px 10px}.lkres button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel2))}
+.bandsel{display:flex;flex-wrap:wrap;gap:6px}
+.bandsel label{display:inline-flex}.bandsel input{display:none}
+.bandsel span{padding:6px 10px;border:1px solid var(--line);border-radius:99px;font-size:13px;cursor:pointer;color:var(--muted)}
+.bandsel input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.satlink{color:var(--text);text-decoration:underline dotted;cursor:pointer}
+.passes td.fq{font-size:12px;color:var(--muted);white-space:normal;min-width:140px}
+.passes tr.nogo td{opacity:.6}
+.passes tr.soon td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.txt{width:100%;border-collapse:collapse;font-size:13px}.txt td,.txt th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.txt th{color:var(--muted);font-weight:600}.txt tr.out td{opacity:.5}
+.pwr{display:grid;grid-template-columns:1fr;gap:8px}
+.pwr button{padding:12px}
+.pwr .danger{border-color:var(--bad);color:#ffb3b5}
+.wiz .port{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;background:var(--panel2);cursor:pointer}
+.wiz .port.on{border-color:var(--accent)}.wiz .port small{color:var(--muted)}
+.wiz .found{padding:12px;border-radius:10px;border:1px solid var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--panel2));margin-top:10px}
+.wiz .nf{padding:12px;border-radius:10px;border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));margin-top:10px}
+progress{width:100%;margin-top:8px}
+.upd{margin:12px 16px 0;padding:10px 14px;border-radius:var(--radius);display:flex;align-items:center;gap:10px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel));font-size:14px}
+.upd b{white-space:nowrap}.upd span{flex:1;min-width:0}.upd button{padding:6px 10px;font-size:13px}
+.notes{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;max-height:260px;overflow:auto;white-space:pre-wrap;margin-top:8px}
+#updOverlay{position:fixed;inset:0;z-index:90;background:rgba(8,11,15,.92);display:flex;align-items:center;justify-content:center;padding:20px}
+#updOverlay .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;width:min(440px,94vw);text-align:center}
+#updOverlay ol{text-align:left;font-size:14px;margin:14px 0 0;padding-left:22px}#updOverlay li{margin:4px 0;color:var(--muted)}
+#updOverlay li.on{color:var(--text);font-weight:600}#updOverlay li.done{color:var(--ok)}
+.spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;margin:0 auto 10px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (max-width:760px){ .upd{margin:10px 10px 0;flex-wrap:wrap} }
+
+/* ===== Version mobile : onglets en bas, arrêt d'urgence toujours visible ===== */
+@media (max-width:760px){
+  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  header{padding:8px 10px;gap:8px;padding-top:calc(8px + env(safe-area-inset-top))}
+  .brand{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
+  .brand #call{display:none}
+  .brand small{font-size:16px;font-weight:600;color:var(--text);margin-left:0}
+  .spacer{display:none}
+  #estop .lg{display:none} #estop .sm{display:inline}
+  #conn{display:none}
+  .hdraz{display:block}
+  #estop{padding:10px 12px;font-size:13px}
+  .iconbtn{padding:7px 10px}
+  .banner{margin:10px 10px 0;padding:10px 12px;font-size:14px}
+  main{padding:10px}
+  .page.cards.on{grid-template-columns:1fr;gap:10px}
+  .page.dash.on{gap:10px}
+  .dash .m-full,.dash .m-half,.dash .m-third,.dash .m-compass{grid-column:1/-1;grid-row:auto}
+  .card.big{grid-row:auto}
+  .readout .az{font-size:40px}
+  #compass{max-width:340px}
+  .manual button{padding:18px 8px}
+  #console{height:calc(100vh - 330px);min-height:220px}
+  .collapsed .conbody{display:block}
+  footer{display:none}
+  #toasts{bottom:calc(84px + env(safe-area-inset-bottom))}
+  #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(22,30,40,.97);
+    backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  #tabbar a,#tabbar button{flex:1;background:none;border:0;border-radius:10px;padding:6px 1px;font-size:11px;min-width:0;color:var(--muted);text-decoration:none;
+    display:flex;flex-direction:column;align-items:center;gap:2px}
+  #tabbar a span,#tabbar button span{font-size:20px;line-height:1;filter:grayscale(1);opacity:.7}
+  #tabbar a.on{color:var(--text);background:var(--panel2)}
+  #tabbar a.on span{filter:none;opacity:1}
+}
+@media (display-mode:standalone){ header{padding-top:calc(10px + env(safe-area-inset-top))} }
+</style>
+</head>
+<body>
+<header>
+  <button id="menuBtn" class="iconbtn" title="Menu" aria-label="Menu">☰</button>
+  <button id="backBtn" class="iconbtn hidden" title="Retour" aria-label="Retour">‹</button>
+  <div class="brand"><span id="call">RotorWeb</span><small id="pageTitle"></small></div>
+  <span id="conn" class="pill">connexion…</span>
+  <span id="hdrAz" class="hdraz">---°</span>
+  <div class="spacer"></div>
+  <button id="estop" title="Arrêt d'urgence (touche Échap)">🛑 <span class="lg">ARRÊT D'URGENCE</span><span class="sm">URGENCE</span></button>
+</header>
+
+<div class="layout">
+<aside id="drawer" aria-label="Menu">
+  <nav class="menu">
+    <a href="#op" data-route="op"><span>🧭</span>Opération</a>
+    <a href="#horaires" data-route="horaires"><span>🕒</span>Horaires</a>
+    <a href="#vent" data-route="vent"><span>💨</span>Vent</a>
+    <a href="#passages" data-route="passages"><span>🛰</span>Passages satellites</a>
+    <a href="#suivi" data-route="suivi"><span>🌙</span>Suivi (cible)</a>
+    <a href="#trafic" data-route="trafic"><span>📜</span>Trafic</a>
+    <a href="#reglages" data-route="reglages"><span>⚙</span>Réglages</a>
+    <div class="menusub" id="menuSub">
+      <a href="#reglages/station" data-route="reglages/station">Station</a>
+      <a href="#reglages/recherche" data-route="reglages/recherche">Recherche d'indicatifs</a>
+      <a href="#reglages/controleur" data-route="reglages/controleur">Contrôleur</a>
+      <a href="#reglages/course" data-route="reglages/course">Course du rotor</a>
+      <a href="#reglages/calibration" data-route="reglages/calibration">Calibration</a>
+      <a href="#reglages/securite" data-route="reglages/securite">Sécurité</a>
+      <a href="#reglages/courriels" data-route="reglages/courriels">Courriels</a>
+      <a href="#reglages/ha" data-route="reglages/ha">Home Assistant</a>
+      <a href="#reglages/app" data-route="reglages/app">Application mobile</a>
+      <a href="#reglages/systeme" data-route="reglages/systeme">Système</a>
+      <a href="#reglages/compte" data-route="reglages/compte">Compte</a>
+    </div>
+  </nav>
+  <div class="drawerfoot" id="foot"></div>
+</aside>
+<div id="scrim"></div>
+
+<div class="content">
+<div id="banner" class="banner off"><span class="dot"></span><span id="bannerTxt">Connexion au serveur…</span>
+  <button id="rearmBtn" class="hidden">Réarmer</button><button id="bOvr" class="hidden">Ignorer…</button></div>
+
+<div id="updBanner" class="upd hidden"><span>⬆ <b id="updBTxt"></b></span><button id="updBSee">Voir les nouveautés</button><button id="updBGo" class="primary">Mettre à jour</button></div>
+<main>
+<!-- ======================= OPÉRATION (tableau de bord à modules) ======================= -->
+<div class="page dash" data-page="op" id="dash">
+  <div class="dashbar"><button id="customBtn" title="Choisir les modules affichés sur cet appareil">✎ Personnaliser</button></div>
+  <section class="card m-compass" data-mod="compass">
+    <div class="modes" id="modes">
+      <button data-mode="manual">✋ Manuel</button>
+      <button data-mode="schedule">🕒 Horaire</button>
+      <button data-mode="track">🛰 Suivi</button>
+    </div>
+    <div class="modeinfo" id="modeInfo"></div>
+    <svg id="compass" viewBox="-128 -128 256 256" aria-label="Boussole : cliquer pour pointer"></svg>
+    <div class="readout">
+      <div class="az"><span id="az">---</span>°</div>
+      <div class="sub" id="sub">&nbsp;</div>
+    </div>
+    <div class="row">
+      <input id="azIn" type="number" inputmode="numeric" min="0" max="359" placeholder="Azimut (0–359)">
+      <input id="elIn" class="hidden" type="number" inputmode="numeric" min="0" max="180" placeholder="Élévation">
+      <button id="goBtn" class="primary">Aller</button>
+      <button id="restBtn" title="Aller à la position de repos">⌂ Repos</button>
+    </div>
+    <div class="row manual">
+      <button class="hold" data-dir="L">⟲ Gauche</button>
+      <button class="stop" id="stopBtn">STOP</button>
+      <button class="hold" data-dir="R">Droite ⟳</button>
+    </div>
+    <div class="row manual hidden" id="elManual">
+      <button class="hold" data-dir="D">▼ Bas</button>
+      <button class="hold" data-dir="U">▲ Haut</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:10px 0 0;text-align:center">Clique sur la boussole pour pointer · maintiens Gauche/Droite pour tourner</p>
+  </section>
+
+  <section class="card m-half" data-mod="control">
+    <h2>Contrôle</h2>
+    <div class="sw" style="padding-top:0"><div class="t"><b>En opération</b><span>Autorise le rotor à bouger</span></div>
+      <label class="toggle"><input type="checkbox" id="swOperating"><i></i></label></div>
+    <div id="opSummary" class="kv" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card m-half" data-mod="pointer">
+    <h2>Pointer vers…</h2>
+    <div class="row" style="margin-top:0">
+      <input id="gridIn" placeholder="Grid, indicatif ou ville" maxlength="40" autocomplete="off" spellcheck="false">
+      <button id="lkBtn" title="Chercher l'indicatif ou la ville">🔎</button>
+    </div>
+    <div class="muted" id="lkHint" style="font-size:12px;margin-top:6px">ex. FN46 · VE2XYZ · JA1ABC · Tokyo · Lima</div>
+    <div class="lkres" id="lkRes"></div>
+    <div class="gridinfo">
+      <div><b id="gSP">—</b><span>Court chemin</span></div>
+      <div><b id="gLP">—</b><span>Long chemin</span></div>
+    </div>
+    <div class="muted" id="gDist" style="text-align:center;margin-top:8px;font-size:13px">&nbsp;</div>
+    <div class="row">
+      <button id="spBtn" class="primary" style="flex:1" disabled>Pointer court</button>
+      <button id="lpBtn" style="flex:1" disabled>Pointer long</button>
+    </div>
+    <div class="chips" id="history"></div>
+  </section>
+
+  <section class="card m-half" data-mod="presets">
+    <h2>Préréglages</h2>
+    <div class="chips" id="presets" style="margin-top:0"></div>
+    <div class="row"><button id="addPreset" style="flex:1">+ Ajouter la position actuelle</button></div>
+  </section>
+
+  <section class="card m-half" data-mod="wsjtx">
+    <div class="modhead"><h2>Dernier DX WSJT-X</h2></div>
+    <div class="kv" id="wsjtxInfo"></div>
+    <div class="row">
+      <select id="selPath" title="Chemin"><option value="short">Court chemin</option><option value="long">Long chemin</option></select>
+      <button id="wsjtxPoint" class="primary" style="flex:1" disabled>Pointer vers le DX</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Le rotor ne suit pas WSJT-X tout seul : touche « Pointer » au besoin.</p>
+  </section>
+
+  <section class="card m-half" data-mod="passes">
+    <div class="modhead"><h2>Prochains passages</h2><a href="#passages">Tout voir ›</a></div>
+    <div id="miniPasses"></div>
+  </section>
+
+  <section class="card m-full" data-mod="traffic">
+    <div class="modhead"><h2>Trafic</h2><a href="#trafic">Console complète ›</a></div>
+    <div id="miniCon" class="minicon"></div>
+  </section>
+
+  <section class="card m-third" data-mod="wind">
+    <div class="modhead"><h2>Vent</h2><a href="#vent">Réglages ›</a></div>
+    <div class="wx"><div id="mwS"><b>—</b><span>Vent km/h</span></div><div id="mwG"><b>—</b><span>Rafales km/h</span></div><div id="mwD"><b>—</b><span>Direction</span></div></div>
+    <div id="mwSt" class="muted" style="font-size:13px;margin-top:8px"></div>
+  </section>
+
+  <section class="card m-third" data-mod="sched">
+    <div class="modhead"><h2>Horaire</h2><a href="#horaires">Horaires ›</a></div>
+    <div id="mSched" style="font-size:14px"></div>
+  </section>
+
+  <section class="card m-third" data-mod="ctrl">
+    <div class="modhead"><h2>Contrôleur</h2><a href="#reglages/controleur">Réglages ›</a></div>
+    <div id="mCtrl" class="kv"></div>
+  </section>
+
+  <section class="card m-third" data-mod="system">
+    <div class="modhead"><h2>Raspberry Pi</h2><a href="#reglages/systeme">Système ›</a></div>
+    <div class="pwr">
+      <button data-pwr="restart">↻ Redémarrer RotorWeb</button>
+      <button data-pwr="reboot">⟳ Redémarrer le Pi</button>
+      <button data-pwr="poweroff" class="danger">⏻ Éteindre le Pi</button>
+    </div>
+  </section>
+</div>
+
+<!-- ======================= HORAIRES ======================= -->
+<div class="page cards" data-page="horaires">
+  <section class="card">
+    <h2>Horaires <span class="muted" style="text-transform:none;letter-spacing:0" id="tzLbl"></span></h2>
+    <div id="schedNow" class="muted" style="font-size:14px"></div>
+    <div id="schedList"></div>
+    <div class="row"><button id="addSched" class="primary" style="flex:1">+ Ajouter une plage</button></div>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Les horaires agissent seulement en mode 🕒 Horaire. À la fin d'une plage, l'antenne va au repos.</p>
+  
+  </section>
+  <section class="card">
+    <h2>Position de repos</h2>
+    <div class="field"><span>Azimut de repos</span><input id="restAz" type="number" min="0" max="359" inputmode="numeric"></div>
+    <div class="sw" style="border:0"><div class="t"><b>Dans l'axe du vent</b><span>Le boom s'aligne avec le vent (moins de prise au vent). Sinon : azimut fixe.</span></div>
+      <label class="toggle"><input type="checkbox" id="restAlign"><i></i></label></div>
+    <div class="muted" id="restNow" style="font-size:13px"></div>
+    <div class="row"><button id="restSave" style="flex:1">Enregistrer</button></div>
+  
+  </section>
+</div>
+
+<!-- ======================= VENT ======================= -->
+<div class="page cards" data-page="vent">
+  <section class="card" id="windCard">
+    <h2>Protection contre le vent</h2>
+    <div class="wx">
+      <div id="wxS"><b>—</b><span>Vent km/h</span></div>
+      <div id="wxG"><b>—</b><span>Rafales km/h</span></div>
+      <div id="wxD"><b>—</b><span>Direction</span></div>
+    </div>
+    <div id="wxStatus" style="font-size:13px;margin-top:8px" class="muted"></div>
+    <div class="row" id="ovrRow">
+      <button id="ovrBtn" class="hidden" style="flex:1;border-color:var(--warn)">⚠ Ignorer le verrou vent…</button>
+      <button id="ovrCancel" class="hidden" style="flex:1">Annuler le contournement</button>
+    </div>
+    <div class="sw" style="margin-top:6px"><div class="t"><b>Protection active</b><span>Météo Open-Meteo à l'emplacement de la station, ou anémomètre via Home Assistant</span></div>
+      <label class="toggle"><input type="checkbox" id="wEnabled"><i></i></label></div>
+    <div class="field"><span>Source des données de vent</span><select id="wSource"><option value="openmeteo">Open-Meteo</option><option value="ha">Home Assistant</option></select></div>
+    <div class="field"><span>Vent maximum (km/h)</span><input id="wMax" type="number" min="5" inputmode="numeric"></div>
+    <div class="field"><span>Rafales maximum (km/h)</span><input id="wGust" type="number" min="5" inputmode="numeric"></div>
+    <div class="field"><span>Calme requis avant déverrouillage (min)</span><input id="wClear" type="number" min="1" inputmode="numeric"></div>
+    <div class="row"><button id="wSave" style="flex:1">Enregistrer</button><button id="wRefresh" title="Rafraîchir la météo">↻</button></div>
+  
+  </section>
+</div>
+
+<!-- ======================= PASSAGES SATELLITES ======================= -->
+<div class="page cards" data-page="passages">
+  <section class="card wide">
+    <h2>Prochains passages des satellites utilisables</h2>
+    <div class="lab">Mes bandes</div>
+    <div class="bandsel" id="spBands"></div>
+    <div class="row" style="align-items:center">
+      <select id="spHours"><option value="12">12 heures</option><option value="24">24 heures</option><option value="48">48 heures</option></select>
+      <span class="muted" style="font-size:13px">Élévation min.</span><input id="spMinEl" type="number" min="0" max="80" style="width:72px;flex:none">
+      <label class="muted" style="font-size:13px;display:inline-flex;gap:5px;align-items:center"><input type="checkbox" id="spUp"> Montée aussi dans mes bandes</label>
+      <label class="muted" style="font-size:13px;display:inline-flex;gap:5px;align-items:center"><input type="checkbox" id="spNogo"> Masquer les passages dans une zone interdite</label>
+      <button id="spRefresh" style="margin-left:auto">↻ Actualiser</button>
+    </div>
+    <div class="muted" id="spInfo" style="font-size:13px;margin-top:8px"></div>
+    <div class="tblwrap"><table class="passes"><thead><tr><th>Jour</th><th>Lever</th><th>Satellite</th><th>Max</th><th>Coucher</th><th>Durée</th><th>Azimuts</th><th>Fréquences</th><th></th></tr></thead><tbody id="spList"></tbody></table></div>
+  </section>
+  <section class="card">
+    <h2>Alertes avant un bon passage</h2>
+    <div class="sw" style="padding-top:0"><div class="t"><b>M'avertir</b><span>Avant chaque passage assez haut d'un satellite de mes bandes</span></div>
+      <label class="toggle"><input type="checkbox" id="saOn"><i></i></label></div>
+    <div class="field"><span>Minutes avant le lever</span><input id="saMin" type="number" min="1" max="120"></div>
+    <div class="field"><span>Élévation maximale d'au moins (°)</span><input id="saEl" type="number" min="0" max="90"></div>
+    <div class="sw"><div class="t"><b>Par courriel</b><span>Destinataire de Réglages › Courriels</span></div><label class="toggle"><input type="checkbox" id="saMail"><i></i></label></div>
+    <div class="sw"><div class="t"><b>Dans Home Assistant</b><span>Événement « passage_sat » de l'entité Notifications</span></div><label class="toggle"><input type="checkbox" id="saHa"><i></i></label></div>
+    <div class="row"><button id="saSave" class="primary" style="flex:1">Enregistrer</button></div>
+    <p class="muted" style="font-size:12px" id="snInfo"></p>
+    <div class="row"><button id="snRefresh" style="flex:1">Mettre à jour les fréquences et les orbites</button></div>
+  </section>
+</div>
+
+<!-- ======================= SUIVI ======================= -->
+<div class="page cards" data-page="suivi">
+  <section class="card">
+    <h2>Cible</h2>
+    <div id="tUnavail" class="hidden" style="color:var(--warn);font-size:14px">Le module de calcul « ephem » n'est pas installé : relance <code>sudo ./update.sh</code>.</div>
+    <select id="tTarget" class="full-w"></select>
+    <div class="tiles">
+      <div><b id="tAz">—</b><span>Azimut</span></div>
+      <div><b id="tEl">—</b><span>Élévation</span></div>
+      <div><b id="tRng">—</b><span>Distance</span></div>
+    </div>
+    <div id="tStatus" style="font-size:14px;margin-top:10px"></div>
+    <div class="row"><button id="tGo" class="primary" style="flex:1">🛰 Suivre maintenant</button><button id="tStop" style="flex:1">Arrêter le suivi</button></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0" id="tNote"></p>
+  </section>
+
+  <section class="card">
+    <h2>Carte du ciel</h2>
+    <svg id="sky" viewBox="-130 -130 260 260" aria-label="Carte du ciel"></svg>
+    <div class="muted" style="font-size:12px;text-align:center" id="skyLegend">
+      <span style="color:var(--accent)">●</span> cible · <span style="color:var(--ok)">◆</span> antenne · <span style="color:var(--warn)">—</span> trajectoire du prochain passage
+    </div>
+  </section>
+
+  <section class="card wide">
+    <h2>Prochains passages <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400" id="pTitle"></span></h2>
+    <div class="row" style="margin-top:0;align-items:center"><span class="muted" style="font-size:13px">Élévation minimale</span>
+      <input id="pMinEl" type="number" min="0" max="80" value="0" style="width:80px;flex:none"><button id="pRefresh">Actualiser</button>
+      <button id="pAuto" style="margin-left:auto">Suivre automatiquement cette cible</button></div>
+    <div class="tblwrap"><table class="passes"><thead><tr><th>Jour</th><th>Lever</th><th>Max</th><th>Coucher</th><th>Durée</th><th>Azimuts</th><th></th></tr></thead><tbody id="pList"></tbody></table></div>
+    <h2 style="margin-top:16px">Suivis automatiques et passages planifiés</h2>
+    <div class="chips" id="pRules" style="margin-top:0"></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Ils s'appliquent en mode 🛰 Suivi. Pour une plage horaire (ex. la Lune de 20 h à 23 h), choisis « Suivi » comme direction dans la page Horaires.</p>
+  </section>
+
+  <section class="card">
+    <h2>Options de suivi</h2>
+    <div class="field"><span>Seuil de déplacement (°)</span><input id="oThr" type="number" step="0.5" min="0.5"></div>
+    <div class="field"><span>Prépositionnement avant le lever (min)</span><input id="oPre" type="number" min="0"></div>
+    <div class="field"><span>Élévation minimale de suivi (°)</span><input id="oMin" type="number" min="0" max="80"></div>
+    <div class="field"><span>Altitude de la station (m)</span><input id="oAlt" type="number"></div>
+    <div class="sw"><div class="t"><b>Retournement (flip)</b><span id="oFlipTxt">Évite un demi-tour du rotor quand un passage traverse la butée (élévation 0–180° requise)</span></div>
+      <label class="toggle"><input type="checkbox" id="oFlip"><i></i></label></div>
+    <div class="sw"><div class="t"><b>Repos après le passage</b><span>Sinon l'antenne reste au point de coucher</span></div>
+      <label class="toggle"><input type="checkbox" id="oPark"><i></i></label></div>
+    <div class="sw"><div class="t"><b>Notifications</b><span>Courriel et Home Assistant au début et à la fin du suivi</span></div>
+      <label class="toggle"><input type="checkbox" id="oNotify"><i></i></label></div>
+    <div class="row"><button id="oSave" style="flex:1">Enregistrer</button></div>
+    <h2 style="margin-top:16px">Éléments orbitaux (TLE)</h2>
+    <div class="muted" id="tleInfo" style="font-size:13px"></div>
+    <div class="row"><button id="tleRefresh" style="flex:1">Mettre à jour depuis CelesTrak</button></div>
+    <label class="lab" for="tleText">Ajouter un satellite (3 lignes : nom, ligne 1, ligne 2)</label>
+    <textarea id="tleText" spellcheck="false" placeholder="MON-SAT&#10;1 99999U ...&#10;2 99999 ..."></textarea>
+    <div class="row"><button id="tleAdd" style="flex:1">Ajouter</button></div>
+    <div class="chips" id="tleCustom"></div>
+  </section>
+</div>
+
+<!-- ======================= TRAFIC ======================= -->
+<div class="page" data-page="trafic">
+  <section class="card" id="conCard">
+    <div class="conhead"><h2>Trafic</h2><span class="counts" id="counts"></span></div>
+    <div class="conbody">
+      <div class="conctl">
+        <label><input type="checkbox" data-src="virtual" checked> Port virtuel</label>
+        <label><input type="checkbox" data-src="rotctld" checked> rotctld</label>
+        <label><input type="checkbox" data-src="wsjtx" checked> WSJT-X</label>
+        <label><input type="checkbox" data-src="schedule" checked> Horaires</label>
+        <label><input type="checkbox" data-src="wind" checked> Vent</label>
+        <label><input type="checkbox" data-src="ha" checked> Home Assistant</label>
+        <label><input type="checkbox" data-src="track" checked> Suivi</label>
+        <label><input type="checkbox" data-src="web" checked> Web</label>
+        <label><input type="checkbox" data-src="system" checked> Système</label>
+        <label><input type="checkbox" data-src="k3ng"> RPi ↔ contrôleur</label>
+        <label><input type="checkbox" id="hidePoll" checked> Masquer les interrogations de position</label>
+        <div class="spacer"></div>
+        <button id="pauseBtn">⏸ Pause</button>
+        <button id="clearBtn">Effacer</button>
+      </div>
+      <div id="console"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ======================= RÉGLAGES (index) ======================= -->
+<div class="page" data-page="reglages">
+  <div class="setlist">
+    <a href="#reglages/station"><span class="ic">📍</span><span class="tx"><b>Station</b><small>Indicatif, grid, fuseau horaire, langue</small></span><span class="chev">›</span></a>
+    <a href="#reglages/recherche"><span class="ic">🔎</span><span class="tx"><b>Recherche d'indicatifs</b><small id="setLkSub">HamQTH, QRZ, préfixes, villes</small></span><span class="chev">›</span></a>
+    <a href="#reglages/controleur"><span class="ic">🔌</span><span class="tx"><b>Contrôleur</b><small id="setCtrlSub">Type de contrôleur, port, GPIO</small></span><span class="chev">›</span></a>
+    <a href="#reglages/course"><span class="ic">↔</span><span class="tx"><b>Course du rotor</b><small>Butées, amplitude, chemin, zones interdites, décalage</small></span><span class="chev">›</span></a>
+    <a href="#reglages/calibration"><span class="ic">🎯</span><span class="tx"><b>Calibration</b><small id="setCalSub">Assistant de calibration</small></span><span class="chev">›</span></a>
+    <a href="#reglages/securite"><span class="ic">🛡</span><span class="tx"><b>Sécurité</b><small>Port virtuel, arrêt d'urgence, protections</small></span><span class="chev">›</span></a>
+    <a href="#reglages/courriels"><span class="ic">📧</span><span class="tx"><b>Courriels</b><small id="setMailSub">Gmail pour les horaires et le vent</small></span><span class="chev">›</span></a>
+    <a href="#reglages/ha"><span class="ic">🏠</span><span class="tx"><b>Home Assistant</b><small id="setHaSub">MQTT et carte boussole</small></span><span class="chev">›</span></a>
+    <a href="#reglages/app"><span class="ic">📲</span><span class="tx"><b>Application mobile</b><small>Installer sur l'écran d'accueil</small></span><span class="chev">›</span></a>
+    <a href="#reglages/systeme"><span class="ic">⏻</span><span class="tx"><b>Système</b><small>Éteindre ou redémarrer le Raspberry Pi</small></span><span class="chev">›</span></a>
+    <a href="#reglages/compte"><span class="ic">👤</span><span class="tx"><b>Compte</b><small id="setAccSub">Langue, déconnexion</small></span><span class="chev">›</span></a>
+  </div>
+</div>
+
+<div class="page cards" data-page="reglages/station">
+  <section class="card">
+    <h2>Station</h2>
+    <label class="lab" for="sCall">Indicatif (affiché en haut de la page)</label><input id="sCall" class="full-w" autocapitalize="characters">
+    <label class="lab" for="sGrid">Grid de la station (idéalement 6 caractères)</label><input id="sGrid" class="full-w" maxlength="8" autocapitalize="characters" placeholder="ex. FN48ji">
+    <label class="lab" for="sTz">Fuseau horaire des horaires</label><input id="sTz" class="full-w" placeholder="America/Toronto">
+    <label class="lab" for="sLang">Langue de la station (courriels, Home Assistant)</label>
+    <select id="sLang" class="full-w"><option value="fr">Français</option><option value="en">English</option></select>
+    <div class="row"><button id="sSave" class="primary" style="flex:1">Enregistrer</button></div>
+    <p class="muted" style="font-size:12px" id="sPorts"></p>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/controleur">
+  <section class="card wiz" id="wizCard">
+    <h2>Changer / redétecter le contrôleur</h2>
+    <p class="muted" style="font-size:13px;margin-top:0">Branche le nouveau contrôleur en USB, puis cherche les ports. La détection envoie seulement des demandes de position, jamais de mouvement. L'ancienne configuration est gardée dans le profil « ↩ Précédent ».</p>
+    <div class="row" style="margin-top:0"><button id="wzScan" class="primary" style="flex:1">🔌 Chercher les ports USB</button></div>
+    <div id="wzPorts"></div>
+    <div id="wzProbeRow" class="row hidden"><button id="wzProbe" style="flex:1">🔍 Détecter le modèle</button><button id="wzProbeAll" title="Toutes les vitesses (plus long)">Toutes les vitesses</button></div>
+    <progress id="wzProg" class="hidden" max="1" value="0"></progress>
+    <div id="wzProgTxt" class="muted" style="font-size:12px"></div>
+    <div id="wzResult"></div>
+    <div id="wzApply" class="hidden">
+      <label class="lab" for="wzDriver">Modèle</label><select id="wzDriver" class="full-w"></select>
+      <div class="grid2"><div><label for="wzBaud">Vitesse (bauds)</label><input id="wzBaud" type="number" placeholder="défaut"></div>
+        <div><label for="wzEl">Élévation</label><select id="wzEl"><option value="0">Azimut seulement</option><option value="1">Azimut + élévation</option></select></div></div>
+      <div class="sw"><div class="t"><b>Garder la course</b><span>Butée, amplitude, zones interdites</span></div><label class="toggle"><input type="checkbox" id="wzKeepCourse" checked><i></i></label></div>
+      <div class="sw"><div class="t"><b>Garder la calibration</b><span>Sinon : calibration et décalage remis à zéro (à refaire)</span></div><label class="toggle"><input type="checkbox" id="wzKeepCal" checked><i></i></label></div>
+      <div class="row"><button id="wzGo" class="primary" style="flex:1">✔ Utiliser ce contrôleur</button></div>
+    </div>
+    <div id="wzTest" class="hidden">
+      <h2 style="margin-top:16px">Test</h2>
+      <div id="wzLive" style="font-size:14px"></div>
+      <div class="row manual"><button class="hold" data-dir="L">⟲ Gauche</button><button class="stop" id="wzStop">STOP</button><button class="hold" data-dir="R">Droite ⟳</button></div>
+      <p class="muted" style="font-size:12px">Maintiens un bouton pour un petit mouvement (« En opération » doit être actif). Si la course ou la calibration a été remise à zéro, va dans Course du rotor puis Calibration.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Profils de rotor</h2>
+    <p class="muted" style="font-size:13px;margin-top:0">Un profil garde le contrôleur, la course, la calibration et l'élévation. Pratique pour passer d'un rotor HF à un rotor satellite.</p>
+    <div id="profList"></div>
+    <div class="row"><input id="profName" placeholder="Nom du profil (ex. Rotor HF)" maxlength="30"><button id="profSave">Enregistrer l'actuel</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Contrôleur (réglages détaillés)</h2>
+    <label class="lab" for="dDriver">Type de contrôleur (pilote)</label>
+    <select id="dDriver" class="full-w"></select>
+    <div id="dSerial" class="grid2">
+      <div><label for="dPort">Port série</label><input id="dPort" placeholder="/dev/rotor"></div>
+      <div><label for="dBaud">Vitesse (bauds)</label><input id="dBaud" type="number" placeholder="défaut"></div>
+    </div>
+    <div id="dR2p" class="grid2"><div><label for="dPh">Rot2Prog : impulsions par degré</label>
+      <select id="dPh"><option value="1">1 (1°)</option><option value="2">2 (0,5°)</option><option value="4">4 (0,25°)</option></select></div></div>
+    <div id="dTcp" class="grid2">
+      <div><label for="dHost">Adresse de rotctld</label><input id="dHost" placeholder="127.0.0.1"></div>
+      <div><label for="dTcpPort">Port</label><input id="dTcpPort" type="number" placeholder="4534"></div>
+      <p class="muted" style="grid-column:1/-1;font-size:12px;margin:4px 0 0">rotctld doit tourner à part, ex. <code>rotctld -m 603 -r /dev/ttyUSB0 -t 4534</code> (l'installateur peut le créer).</p>
+    </div>
+    <div id="dGpio">
+      <div class="grid2">
+        <div><label for="gCw">GPIO relais horaire</label><input id="gCw" type="number"></div>
+        <div><label for="gCcw">GPIO relais anti-horaire</label><input id="gCcw" type="number"></div>
+        <div class="elonly"><label for="gUp">GPIO relais haut</label><input id="gUp" type="number"></div>
+        <div class="elonly"><label for="gDown">GPIO relais bas</label><input id="gDown" type="number"></div>
+        <div><label for="gAds">ADS1115 adresse (hex)</label><input id="gAds" placeholder="48"></div>
+        <div><label for="gChAz">ADS1115 entrée azimut</label><select id="gChAz"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="elonly"><label for="gChEl">ADS1115 entrée élévation</label><select id="gChEl"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+      </div>
+      <div class="sw" style="border:0"><div class="t"><b>Relais actifs au niveau bas</b><span>Cas de la plupart des modules relais</span></div>
+        <label class="toggle"><input type="checkbox" id="gLow"><i></i></label></div>
+    </div>
+    <div class="muted" id="dLive" style="font-size:13px;margin-top:8px"></div>
+    <div class="row"><button id="dSave" class="primary" style="flex:1">Enregistrer et reconnecter</button></div>
+  
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/course">
+  <section class="card">
+    <h2>Course du rotor</h2>
+    <svg id="courseBar" viewBox="0 0 340 64" aria-label="Course du rotor"></svg>
+    <div class="grid2">
+      <div><label for="cStop">Butée mécanique</label><select id="cStop"><option value="0">Nord (0°)</option><option value="180">Sud (180°)</option></select></div>
+      <div><label for="cRange">Amplitude totale</label><select id="cRange"><option>360</option><option>450</option><option>540</option></select></div>
+      <div style="grid-column:1/-1"><label for="cPath">Chemin</label><select id="cPath" class="full-w"><option value="short">Le plus court (utilise le chevauchement)</option><option value="avoid_overlap">Éviter le chevauchement (ménage les câbles)</option></select></div>
+      <div><label for="cStall">Détection de blocage (s, 0 = non)</label><input id="cStall" type="number" min="0"></div>
+      <div class="diyonly"><label for="cAntic">Arrêt anticipé (°)</label><input id="cAntic" type="number" step="0.5" min="0"></div>
+      <div class="diyonly"><label for="cDead">Temps mort relais (s)</label><input id="cDead" type="number" step="0.1" min="0.1"></div>
+      <div class="elonly"><label for="cElR">Élévation maximum</label><select id="cElR"><option value="90">90°</option><option value="180">180°</option></select></div>
+    </div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0" id="cNote"></p>
+    <div class="row"><button id="cSave" style="flex:1">Enregistrer la course</button></div>
+    <h2 style="margin-top:18px">Zones interdites</h2>
+    <div class="chips" id="nogoList" style="margin-top:0"></div>
+    <div class="row"><input id="ngFrom" type="number" placeholder="De (°)" min="0" max="359"><input id="ngTo" type="number" placeholder="À (°)" min="0" max="359"><button id="ngAdd">Ajouter</button></div>
+    <h2 style="margin-top:18px">Décalage de l'antenne</h2>
+    <div class="muted" id="offNow" style="font-size:13px"></div>
+    <div class="row"><input id="offReal" type="number" placeholder="L'antenne pointe réellement vers… (°)" min="0" max="359"><button id="offFix">Corriger</button></div>
+    <div class="row"><input id="offVal" type="number" step="0.5" placeholder="ou décalage direct (°)"><button id="offSet">Appliquer</button></div>
+  
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/calibration">
+  <section class="card">
+    <h2>Calibration</h2>
+    <div id="calDiy">
+      <div class="rawbox">
+        <div><b id="rawAz">—</b><span>Valeur brute azimut</span></div>
+        <div><b id="travelNow">—</b><span>Course (°)</span></div>
+        <div><b id="relayNow">—</b><span>Relais</span></div>
+      </div>
+      <div id="calState" style="font-size:14px;margin-top:10px"></div>
+      <div class="row manual"><button class="hold" data-dir="L">⟲ Gauche</button><button class="stop" id="calStop">STOP</button><button class="hold" data-dir="R">Droite ⟳</button></div>
+      <div class="step"><span class="n" id="st1">1</span><span class="tx">Maintiens <b>Gauche</b> jusqu'à la butée gauche (le rotor s'arrête de lui-même).</span><button id="calCcw">Enregistrer</button></div>
+      <div class="step"><span class="n" id="st2">2</span><span class="tx">Maintiens <b>Droite</b> jusqu'à la butée droite.</span><button id="calCw">Enregistrer</button></div>
+      <div class="step"><span class="n" id="st3">3</span><span class="tx">Facultatif : pointe l'antenne sur un repère connu (N, E, S, O, une tour…) et entre son azimut réel.</span></div>
+      <div class="row"><input id="calDeg" type="number" placeholder="Azimut réel du repère (°)" min="0" max="359"><button id="calPt">Ajouter le point</button></div>
+      <table class="ptable"><thead><tr><th>Brut</th><th>Course</th><th>Azimut</th><th></th></tr></thead><tbody id="calPts"></tbody></table>
+      <div class="row"><button id="calClear" style="flex:1">Tout effacer</button></div>
+      <div class="elonly" id="calEl">
+        <h2 style="margin-top:18px">Élévation</h2>
+        <div class="muted" id="rawEl" style="font-size:13px"></div>
+        <div class="row manual"><button class="hold" data-dir="D">▼ Bas</button><button class="hold" data-dir="U">▲ Haut</button></div>
+        <div class="row"><button id="calElDown" style="flex:1">Enregistrer 0° (horizon)</button><button id="calElUp" style="flex:1">Enregistrer le maximum</button></div>
+        <div class="row"><input id="calElDeg" type="number" placeholder="Élévation réelle (°)"><button id="calElPt">Ajouter le point</button></div>
+        <table class="ptable"><tbody id="calElPts"></tbody></table>
+      </div>
+    </div>
+    <div id="calGs">
+      <p style="font-size:14px;margin-top:0">Les contrôleurs GS-232 (K3NG, Yaesu) se calibrent eux-mêmes avec deux commandes :</p>
+      <div class="step"><span class="n">1</span><span class="tx">Amène le rotor en <b>butée gauche</b> (bouton Gauche maintenu), puis envoie <b>O</b>.</span><button id="gsO">Envoyer O</button></div>
+      <div class="step"><span class="n">2</span><span class="tx">Amène le rotor en <b>butée droite</b>, puis envoie <b>F</b> (pleine échelle).</span><button id="gsF">Envoyer F</button></div>
+      <div class="row manual"><button class="hold" data-dir="L">⟲ Gauche</button><button class="hold" data-dir="R">Droite ⟳</button></div>
+      <div class="elonly row"><button id="gsO2" style="flex:1">Élévation : O2 (bas)</button><button id="gsF2" style="flex:1">Élévation : F2 (haut)</button></div>
+      <p class="muted" style="font-size:12px">Ensuite, corrige l'orientation exacte avec le décalage de l'antenne.</p>
+    </div>
+    <div id="calOther"><p style="font-size:14px;margin-top:0">Ce contrôleur se calibre depuis son propre menu (voir son manuel). RotorWeb corrige ensuite l'orientation avec le <b>décalage de l'antenne</b>.</p></div>
+  
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/securite">
+  <section class="card">
+    <h2>Sécurité</h2>
+    <div class="sw" style="padding-top:0"><div class="t"><b>Bloquer port virtuel</b><span>Refuse les commandes de mouvement du PC (COM virtuel et rotctld). La position reste lisible.</span></div>
+      <label class="toggle red"><input type="checkbox" id="swBlock"><i></i></label></div>
+    <div class="secinfo">
+      <p><b>Arrêt d'urgence</b> : bouton rouge en haut de toutes les pages, ou touche Échap. Se lève avec « Réarmer ».</p>
+      <p><b>En opération</b> : interrupteur de la page <a href="#op">Opération</a>. Revient sur OFF au démarrage du Raspberry Pi.</p>
+      <p><b>Verrou vent</b> : réglages dans la page <a href="#vent">Vent</a>.</p>
+      <p><b>Zones interdites et détection de blocage</b> : dans <a href="#reglages/course">Course du rotor</a>.</p>
+    </div>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/courriels">
+  <section class="card">
+    <h2>Courriels (horaires et vent)</h2>
+    <div class="sw" style="padding-top:0"><div class="t"><b>Envoyer les courriels</b><span>Arrivée de l'antenne, alertes, verrou vent, rotor immobile</span></div>
+      <label class="toggle"><input type="checkbox" id="eEnabled"><i></i></label></div>
+    <label class="lab" for="eUser">Adresse Gmail d'envoi</label><input id="eUser" class="full-w" type="email" autocomplete="off" placeholder="station@gmail.com">
+    <label class="lab" for="ePass">Mot de passe d'application Google</label><input id="ePass" class="full-w" type="password" autocomplete="new-password" placeholder="16 lettres (voir le guide)">
+    <label class="lab" for="eTo">Destinataire</label><input id="eTo" class="full-w" type="email" placeholder="ami@exemple.com">
+    <div class="row"><button id="eTest" style="flex:1">Envoyer un test</button><button id="eSave" class="primary" style="flex:1">Enregistrer</button></div>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/ha">
+  <section class="card">
+    <h2>Home Assistant (MQTT)</h2>
+    <div class="sw" style="padding-top:0"><div class="t"><b>Activer l'intégration</b><span id="hStatus">Entités créées automatiquement dans Home Assistant</span></div>
+      <label class="toggle"><input type="checkbox" id="hEnabled"><i></i></label></div>
+    <div class="grid2">
+      <div><label for="hHost">Broker MQTT (IP de Home Assistant)</label><input id="hHost" placeholder="192.168.1.10"></div>
+      <div><label for="hPort">Port</label><input id="hPort" type="number" placeholder="1883"></div>
+      <div><label for="hUser">Utilisateur MQTT</label><input id="hUser" autocomplete="off" placeholder="ex. rotorweb"></div>
+      <div><label for="hPass">Mot de passe MQTT</label><input id="hPass" type="password" autocomplete="new-password"></div>
+    </div>
+    <div class="row"><button id="hSave" class="primary" style="flex:1">Enregistrer et connecter</button></div>
+    <p class="muted" style="font-size:12px">Carte boussole pour le tableau de bord : <a href="/ha/rotorweb-compass-card.js" download style="color:var(--accent)">télécharger rotorweb-compass-card.js</a> (voir le guide).</p>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/app">
+  <section class="card">
+    <h2>Application mobile</h2>
+    <div id="installBox" class="muted" style="font-size:13px"></div>
+    <div class="row"><button id="installBtn" class="primary hidden" style="flex:1">📲 Installer l'app</button></div>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/recherche">
+  <section class="card">
+    <h2>Recherche d'indicatifs</h2>
+    <p class="muted" style="font-size:13px;margin-top:0">La case « Pointer vers… » accepte un grid, un indicatif ou une ville. Pour la position exacte d'une station, il faut un compte HamQTH (gratuit) ou QRZ.com (abonnement XML). Sans compte, le préfixe donne le pays. Les villes viennent d'Open-Meteo (gratuit).</p>
+    <label class="lab" for="lkSource">Source pour les indicatifs</label>
+    <select id="lkSource" class="full-w">
+      <option value="both">HamQTH, puis QRZ si pas trouvé</option>
+      <option value="qrz_first">QRZ, puis HamQTH si pas trouvé</option>
+      <option value="hamqth">HamQTH seulement</option>
+      <option value="qrz">QRZ seulement</option>
+      <option value="prefix">Préfixe seulement (sans Internet)</option>
+    </select>
+    <div class="grid2">
+      <div><label for="lkHU">Utilisateur HamQTH</label><input id="lkHU" autocomplete="off"></div>
+      <div><label for="lkHP">Mot de passe HamQTH</label><input id="lkHP" type="password" autocomplete="new-password"></div>
+      <div><label for="lkQU">Utilisateur QRZ.com</label><input id="lkQU" autocomplete="off"></div>
+      <div><label for="lkQP">Mot de passe QRZ.com</label><input id="lkQP" type="password" autocomplete="new-password"></div>
+    </div>
+    <div class="row"><button id="lkSave" class="primary" style="flex:1">Enregistrer</button></div>
+    <p class="muted" style="font-size:12px">Le préfixe sert toujours de dernier recours : il donne la direction du pays (approximative pour les grands pays).</p>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/systeme">
+  <section class="card" id="updCard">
+    <h2>Mises à jour</h2>
+    <div class="kv"><span>Version installée</span><div id="upCur">—</div><span>Dernière version</span><div id="upLatest">—</div><span>Vérifiée</span><div id="upChecked">—</div></div>
+    <div id="upStatus" style="font-size:14px;margin-top:10px"></div>
+    <div id="upNotes" class="notes hidden"></div>
+    <div class="row"><button id="upCheck" style="flex:1">🔄 Vérifier les mises à jour</button><button id="upGo" class="primary hidden" style="flex:1">⬆ Mettre à jour</button></div>
+    <p class="muted" style="font-size:12px">La vérification se fait aussi toute seule une fois par jour. Avant d'installer, RotorWeb vérifie la signature de la version ; l'antenne va au repos ; si la nouvelle version ne démarre pas, l'ancienne revient automatiquement. Rien ne s'installe sans ta confirmation.</p>
+    <details><summary class="muted" style="font-size:13px;cursor:pointer">Source des mises à jour</summary>
+      <label class="lab" for="upRepo">Dépôt GitHub (compte/dépôt)</label><input id="upRepo" class="full-w" placeholder="RadioamateursduFjord/rotorweb">
+      <label class="lab" for="upUrl">Ou adresse directe d'un release.json (miroir, laisser vide pour GitHub)</label><input id="upUrl" class="full-w" placeholder="https://…/release.json">
+      <div class="row"><button id="upSrcSave" style="flex:1">Enregistrer la source</button></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Sauvegarde des réglages</h2>
+    <p class="muted" style="font-size:13px;margin-top:0">Un seul fichier avec tout : réglages, contrôleur, calibration, profils, horaires, préréglages, courriels, Home Assistant, comptes. Il est chiffré avec le mot de passe choisi ici : <b>sans ce mot de passe, la sauvegarde est illisible</b>, note-le bien.</p>
+    <div class="grid2"><div><label for="bkPw">Mot de passe de la sauvegarde</label><input id="bkPw" type="password" autocomplete="new-password"></div>
+      <div><label for="bkPw2">Encore une fois</label><input id="bkPw2" type="password" autocomplete="new-password"></div></div>
+    <div class="row"><button id="bkGo" class="primary" style="flex:1">💾 Télécharger la sauvegarde</button></div>
+    <h2 style="margin-top:18px">Restaurer une sauvegarde</h2>
+    <input id="rsFile" type="file" accept=".rwbackup" class="full-w">
+    <label class="lab" for="rsPw">Mot de passe de la sauvegarde</label><input id="rsPw" type="password" class="full-w" autocomplete="off">
+    <div class="row"><button id="rsCheck" style="flex:1">🔍 Ouvrir la sauvegarde</button></div>
+    <div id="rsSum"></div>
+    <div class="row hidden" id="rsGoRow"><button id="rsGo" style="flex:1;background:var(--warn);border-color:var(--warn);color:#111;font-weight:700">♻ Remplacer les réglages actuels</button></div>
+    <p class="muted" style="font-size:12px">La restauration remplace TOUS les réglages actuels (une copie est gardée sur le Pi), puis RotorWeb redémarre. Aussi possible en terminal : <code>sudo /opt/rotorweb/restore.sh fichier.rwbackup</code>, ou pendant une réinstallation avec <code>install.sh</code>.</p>
+  </section>
+
+  <section class="card">
+    <h2>Raspberry Pi</h2>
+    <div class="pwr">
+      <button data-pwr="restart">↻ Redémarrer RotorWeb</button>
+      <button data-pwr="reboot">⟳ Redémarrer le Raspberry Pi</button>
+      <button data-pwr="poweroff" class="danger">⏻ Éteindre le Raspberry Pi</button>
+    </div>
+    <div class="sw" style="margin-top:8px"><div class="t"><b>Repos avant l'arrêt</b><span>L'antenne va à la position de repos avant d'éteindre ou de redémarrer le Pi (si en opération)</span></div>
+      <label class="toggle"><input type="checkbox" id="pwPark"><i></i></label></div>
+    <p class="muted" style="font-size:12px" id="pwNote" data-k="pwnote">Après « Éteindre », attends que la DEL verte du Pi arrête de clignoter avant de couper le courant. Pour le rallumer : débranche et rebranche l'alimentation.</p>
+  </section>
+</div>
+
+<div class="page cards" data-page="reglages/compte">
+  <section class="card">
+    <h2>Compte</h2>
+    <p>Connecté : <b id="whoami">—</b></p>
+    <label class="lab" for="uLang">Langue de l'interface (pour ce compte)</label>
+    <select id="uLang" class="full-w"><option value="fr">Français</option><option value="en">English</option></select>
+    <p class="muted" style="font-size:13px">Les comptes se gèrent sur le Raspberry Pi : <code>sudo /opt/rotorweb/users.sh</code></p>
+    <div class="row"><a href="/logout" style="flex:1"><button type="button" style="width:100%">Déconnexion</button></a></div>
+  </section>
+</div>
+</main>
+</div>
+</div>
+
+<nav id="tabbar" aria-label="Navigation">
+  <a href="#op" data-route="op"><span>🧭</span>Opération</a>
+  <a href="#horaires" data-route="horaires"><span>🕒</span>Horaires</a>
+  <a href="#trafic" data-route="trafic"><span>📜</span>Trafic</a>
+  <button id="tabMenu"><span>☰</span>Menu</button>
+</nav>
+
+<dialog id="schedDlg">
+  <h2 id="schedTitle">Nouvelle plage</h2>
+  <label for="scName">Nom (optionnel)</label><input id="scName" maxlength="40" placeholder="ex. Asie le matin">
+  <div class="row" style="margin-top:6px">
+    <div style="flex:1"><label for="scStart">Début</label><input id="scStart" type="time" style="width:100%"></div>
+    <div style="flex:1"><label for="scEnd">Fin</label><input id="scEnd" type="time" style="width:100%"></div>
+  </div>
+  <label>Jours</label>
+  <div class="days" id="scDays"></div>
+  <label for="scType">Direction</label>
+  <select id="scType" style="width:100%">
+    <option value="region">Région / pays</option><option value="grid">Grid précis</option><option value="az">Azimut fixe</option><option value="track">Suivi (Lune, satellite…)</option>
+  </select>
+  <div style="margin-top:8px">
+    <select id="scRegion" style="width:100%"></select>
+    <input id="scGrid" class="hidden" placeholder="ex. PM95" maxlength="8" autocapitalize="characters" style="width:100%">
+    <input id="scAz" class="hidden" type="number" min="0" max="359" placeholder="Azimut 0–359" inputmode="numeric" style="width:100%">
+    <select id="scTrack" class="hidden" style="width:100%"></select>
+  </div>
+  <div id="scPreview" class="muted" style="margin-top:8px;font-size:14px"></div>
+  <div class="row" style="margin-top:16px">
+    <button id="scCancel" style="flex:1">Annuler</button>
+    <button id="scSave" class="primary" style="flex:1">Enregistrer</button>
+  </div>
+</dialog>
+
+<dialog id="ovrDlg">
+  <h2>Ignorer le verrou vent</h2>
+  <p id="ovrTxt"></p>
+  <p class="muted" style="font-size:13px">Pendant ce temps, seules les commandes manuelles (page web, PC) sont permises. Les horaires et le suivi restent bloqués. Un courriel est envoyé.</p>
+  <label for="ovrMin">Durée</label>
+  <select id="ovrMin" style="width:100%"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
+  <div class="row" style="margin-top:16px">
+    <button id="ovrNo" style="flex:1">Annuler</button>
+    <button id="ovrYes" style="flex:1;background:var(--warn);border-color:var(--warn);color:#111;font-weight:700">Bouger quand même</button>
+  </div>
+</dialog>
+<dialog id="customDlg" class="wide">
+  <h2>Personnaliser la page Opération</h2>
+  <p class="muted" style="font-size:13px;margin:0" id="customFor"></p>
+  <div class="modlist" id="modList"></div>
+  <p class="muted" style="font-size:12px;margin:0">La boussole, le choix du mode et l'arrêt d'urgence restent toujours affichés.</p>
+  <div class="row" style="margin-top:12px">
+    <button id="customReset">Par défaut</button>
+    <button id="customCancel" style="flex:1">Annuler</button>
+    <button id="customSave" class="primary" style="flex:1">Enregistrer</button>
+  </div>
+</dialog>
+
+<dialog id="satDlg" class="wide">
+  <h2 id="satTitle">Satellite</h2>
+  <div id="satBody"></div>
+  <div class="row" style="margin-top:12px"><button id="satTrack" class="primary" style="flex:1">🛰 Suivre</button><button id="satClose" style="flex:1">Fermer</button></div>
+</dialog>
+
+<dialog id="pwrDlg">
+  <h2 id="pwrTitle">Confirmer</h2>
+  <p id="pwrTxt"></p>
+  <div class="row" style="margin-top:16px">
+    <button id="pwrNo" style="flex:1">Annuler</button>
+    <button id="pwrYes" style="flex:1;background:var(--bad);border-color:var(--bad);color:#fff;font-weight:700">Confirmer</button>
+  </div>
+</dialog>
+<div id="updOverlay" class="hidden"><div class="box">
+  <div class="spin"></div><h2 id="uoTitle" style="text-transform:none;letter-spacing:0;font-size:16px;color:var(--text)">Mise à jour</h2>
+  <ol><li data-s="download">Téléchargement</li><li data-s="verify">Vérification de la signature</li><li data-s="park">Antenne au repos et arrêt du rotor</li>
+    <li data-s="install">Installation et redémarrage</li><li data-s="reconnect">Reconnexion à la nouvelle version</li></ol>
+  <p class="muted" style="font-size:12px;margin-bottom:0">Ne débranche pas le Raspberry Pi. La page se recharge toute seule (1 à 3 minutes).</p>
+</div></div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+let S = {};               // état reçu du serveur
+let ws = null, wsOk = false, me = null;
+
+/* ---------- Langue (français par défaut ; anglais : table i18n-en.json, partagée avec le serveur) ---------- */
+let LANG="fr", I18N=null, I18Npats=[];
+try{ LANG=localStorage.getItem("rw_lang")||((document.cookie.match(/(?:^|; )rw_lang=(en|fr)/)||[])[1])||"fr"; }catch(e){}
+function TR(t){ if(LANG!=="en"||!I18N||t==null) return t; return trx(String(t),0); }
+function trx(t,depth){
+  const s=t.trim(); if(!s||!I18N) return t;
+  const lead=t.slice(0,t.length-t.trimStart().length), trail=t.slice(t.trimEnd().length);
+  if(Object.prototype.hasOwnProperty.call(I18N,s)) return lead+I18N[s]+trail;
+  if(depth>4) return t;
+  for(const [rx,rp] of I18Npats){ const m=rx.exec(s); if(m){ const g=m.slice(1).map(x=>trx(x||"",depth+1)); return lead+rp.replace(/\$(\d)/g,(_,n)=>g[n-1]??"")+trail; } }
+  return t;
+}
+const TR_ATTRS=["placeholder","title","aria-label","label"];
+const NO_TR="script,style,code,textarea,.notr";
+function trAttrs(el){ TR_ATTRS.forEach(a=>{ if(el.hasAttribute&&el.hasAttribute(a)){ const v=el.getAttribute(a), t=trx(v,0); if(t!==v) el.setAttribute(a,t); } }); }
+function trNode(n){
+  if(LANG!=="en"||!I18N||!n) return;
+  if(n.nodeType===3){ const p=n.parentElement; if(!p||p.closest(NO_TR)) return; const v=trx(n.data,0); if(v!==n.data) n.data=v; return; }
+  if(n.nodeType!==1||n.matches(NO_TR)) return;
+  trAttrs(n);
+  const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT,{acceptNode:x=>x.nodeType===1&&x.matches(NO_TR)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  let x; while((x=w.nextNode())){ if(x.nodeType===3){ const v=trx(x.data,0); if(v!==x.data) x.data=v; } else trAttrs(x); }
+}
+new MutationObserver(ms=>{ if(LANG!=="en"||!I18N) return;
+  for(const m of ms){ if(m.type==="childList") m.addedNodes.forEach(trNode); else if(m.type==="characterData") trNode(m.target); else if(m.type==="attributes") trAttrs(m.target); }
+}).observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:TR_ATTRS});
+async function loadI18n(){
+  const r=await fetch("/i18n-en.json",{cache:"no-cache"}); const j=await r.json();
+  I18N=j.exact||{}; I18Npats=(j.patterns||[]).map(([a,b])=>{ try{ return [new RegExp("^"+a+"$","s"),b]; }catch(e){ return null; } }).filter(Boolean);
+}
+async function setLang(l){
+  l=l==="en"?"en":"fr";
+  try{ localStorage.setItem("rw_lang",l); }catch(e){}
+  document.cookie=`rw_lang=${l};path=/;max-age=31536000;samesite=lax`;
+  if(l==="fr"){ if(LANG==="en"){ LANG="fr"; location.reload(); } return; }
+  LANG="en"; if(!I18N){ try{ await loadI18n(); }catch(e){ return; } }
+  document.documentElement.lang="en"; trNode(document.body); relabelDays();
+  $("#pageTitle").textContent=TR(PAGES[route]||""); document.title=TR(document.title);
+  if(S.version) render();
+}
+const JOURS_FR=["dim.","lun.","mar.","mer.","jeu.","ven.","sam."], JOURS_EN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAYS_FR=["L","M","M","J","V","S","D"], DAYS_EN=["M","T","W","T","F","S","S"];
+function J(i){ return (LANG==="en"?JOURS_EN:JOURS_FR)[i]; }
+function D(i){ return (LANG==="en"?DAYS_EN:DAYS_FR)[i]; }
+function relabelDays(){ document.querySelectorAll("#scDays span").forEach((sp,i)=>sp.textContent=D(i));
+  document.querySelectorAll("#compass .cardinal").forEach(t=>{ if(t.textContent==="O"||t.textContent==="W") t.textContent=WEST(); }); }
+function WEST(){ return LANG==="en"?"W":"O"; }
+
+/* ---------- Maidenhead ---------- */
+const GRID_RE = /^[A-R]{2}[0-9]{2}([A-X]{2}([0-9]{2})?)?$/;
+function gridToLatLon(g){
+  g = g.trim().toUpperCase(); if(!GRID_RE.test(g)) return null;
+  let lon=(g.charCodeAt(0)-65)*20-180+(+g[2])*2, lat=(g.charCodeAt(1)-65)*10-90+(+g[3]), w=2, h=1;
+  if(g.length>=6){lon+=(g.charCodeAt(4)-65)*2/24; lat+=(g.charCodeAt(5)-65)/24; w=2/24; h=1/24;}
+  if(g.length==8){lon+=(+g[6])*2/240; lat+=(+g[7])/240; w=2/240; h=1/240;}
+  return [lat+h/2, lon+w/2];
+}
+function bearingDist(a,b){
+  const r=Math.PI/180, p1=a[0]*r, p2=b[0]*r, dl=(b[1]-a[1])*r;
+  const y=Math.sin(dl)*Math.cos(p2), x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  const brg=(Math.atan2(y,x)/r+360)%360;
+  const h=Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+  return [brg, 2*6371*Math.asin(Math.min(1,Math.sqrt(h)))];
+}
+
+/* ---------- WebSocket ---------- */
+function connect(){
+  const proto = location.protocol==="https:"?"wss":"ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen = ()=>{wsOk=true; render();};
+  ws.onclose = ()=>{wsOk=false; if(updInProgress) showUpdOverlay("reconnect"); render();
+    // session expirée ? → retour à la page de connexion
+    fetch("/api/me",{cache:"no-store"}).then(r=>{ if(r.status===401) location.href="/login"; else setTimeout(connect,2000); })
+      .catch(()=>setTimeout(connect,3000));
+  };
+  ws.onmessage = ev=>{
+    const m = JSON.parse(ev.data);
+    if(m.type==="state"){ if(knownVersion && m.version!==knownVersion){ location.reload(); return; } knownVersion=m.version; S=m; render(); }
+    else if(m.type==="pos"){Object.assign(S,{az:m.az,el:m.el,target_az:m.target_az,target_el:m.target_el}); renderPos();}
+    else if(m.type==="log"){addLog(m.entry);}
+    else if(m.type==="log_backlog"){logs=[]; m.entries.forEach(e=>logs.push(e)); renderLogs();}
+    else if(m.type==="toast"){toast(m.text,m.level);}
+    else if(m.type==="live"){S.live=m.live; renderLive();}
+    else if(m.type==="track"){S.track=m.track; renderTrack(); renderModes(); renderOpSummary();}
+    else if(m.type==="passes"){renderPasses(m);}
+    else if(m.type==="whoami"){me=m.user; $("#whoami").textContent=me;}
+    else if(m.type==="prefs"){onPrefs(m.prefs);}
+    else if(m.type==="lookup"){onLookup(m);}
+    else if(m.type==="satpasses"){onSatPasses(m);}
+    else if(m.type==="satinfo"){onSatInfo(m);}
+    else if(m.type==="ctrl_ports"){onCtrlPorts(m);}
+    else if(m.type==="ctrl_progress"){onCtrlProgress(m);}
+    else if(m.type==="ctrl_found"){onCtrlFound(m);}
+    else if(m.type==="system"){onSystem(m);}
+    else if(m.type==="update"){S.update=m.update; renderUpdate();}
+  };
+}
+function send(o){ if(ws && ws.readyState===1) ws.send(JSON.stringify(o)); else toast("Pas de connexion au serveur","error"); }
+function ask(msg){ return confirm(TR(msg)); }
+
+/* ---------- Boussole ---------- */
+(function buildCompass(){
+  const svg=$("#compass"); let s=`<circle r="118" class="face"/>`;
+  s+=`<path id="beam" class="beam" d="M0,0 L-42,-104 A112,112 0 0,1 42,-104 Z"/>`;
+  for(let d=0; d<360; d+=5){
+    const a=d*Math.PI/180, L=d%30===0, r1=L?100:(d%10===0?106:110), r2=116;
+    s+=`<line class="tk${L?" l":""}" x1="${(Math.sin(a)*r1).toFixed(1)}" y1="${(-Math.cos(a)*r1).toFixed(1)}" x2="${(Math.sin(a)*r2).toFixed(1)}" y2="${(-Math.cos(a)*r2).toFixed(1)}"/>`;
+  }
+  const card={0:"N",90:"E",180:"S",270:WEST()};
+  for(let d=0; d<360; d+=30){
+    const a=d*Math.PI/180, r=card[d]?86:89;
+    s+=`<text class="lbl${card[d]?" cardinal":""}" x="${(Math.sin(a)*r).toFixed(1)}" y="${(-Math.cos(a)*r).toFixed(1)}">${card[d]||d}</text>`;
+  }
+  s+=`<g id="ghostg" class="hidden"><line class="ghost" x1="0" y1="0" x2="0" y2="-114"/></g>`;
+  s+=`<text id="ghosttxt" class="ghosttxt hidden" x="0" y="34"></text>`;
+  s+=`<g id="target" class="hidden"><path class="tgt" d="M0,-117 L-7,-127 L7,-127 Z"/></g>`;
+  s+=`<g id="needle"><line class="needle-tail" x1="0" y1="0" x2="0" y2="26"/><line class="needle" x1="0" y1="0" x2="0" y2="-96"/><circle class="hub" r="6"/></g>`;
+  svg.innerHTML=s;
+  const angleFromEvent = e=>{
+    const r=svg.getBoundingClientRect(), x=e.clientX-(r.left+r.width/2), y=e.clientY-(r.top+r.height/2);
+    return Math.round((Math.atan2(x,-y)*180/Math.PI+360)%360)%360;
+  };
+  svg.addEventListener("pointermove",e=>{
+    if(e.pointerType!=="mouse") return;
+    const a=angleFromEvent(e); $("#ghostg").classList.remove("hidden"); $("#ghosttxt").classList.remove("hidden");
+    $("#ghostg").style.transform=`rotate(${a}deg)`; $("#ghosttxt").textContent=a+"°";
+  });
+  svg.addEventListener("pointerleave",()=>{$("#ghostg").classList.add("hidden");$("#ghosttxt").classList.add("hidden");});
+  svg.addEventListener("click",e=>{ const a=angleFromEvent(e); goto(a); });
+})();
+let needleDisp=null, targetDisp=null;
+function contRot(prev,deg){ if(prev===null) return deg; return prev+(((deg-prev)%360)+540)%360-180; }
+
+/* ---------- Rendu ---------- */
+function render(){
+  $("#call").textContent=S.callsign||"RotorWeb";
+  renderOpSummary(); renderSetIndex();
+  document.title=(S.callsign?S.callsign+" · ":"")+TR(PAGES[route]||"")+" · RotorWeb";
+  if(!filledOnce && S.version){ filledOnce=true; fillSettings();
+    if(route==="passages"||(route==="op"&&curLayout().some(m=>m.id==="passes"&&m.on))) askSatPasses(); }
+  const conn=$("#conn");
+  if(!wsOk){conn.textContent="serveur hors ligne"; conn.className="pill bad";}
+  else if(S.simulate){conn.textContent="SIMULATION"; conn.className="pill ok";}
+  else if(S.connected){conn.textContent="Contrôleur connecté"; conn.className="pill ok";}
+  else {conn.textContent="Contrôleur absent"; conn.className="pill bad";}
+
+  const b=$("#banner"), t=$("#bannerTxt"); $("#rearmBtn").classList.add("hidden");
+  $("#bOvr").classList.toggle("hidden",!(wsOk&&!S.estop&&S.wind_locked&&!(S.wind_override_until*1000>Date.now())));
+  if(!wsOk){b.className="banner disc"; t.textContent="Connexion au serveur perdue — reconnexion…";}
+  else if(S.estop){b.className="banner estop"; t.textContent="🛑 ARRÊT D'URGENCE ACTIF — aucune commande acceptée"; $("#rearmBtn").classList.remove("hidden");}
+  else if(!S.connected){b.className="banner disc"; t.textContent="Contrôleur non connecté"+(S.conn_error?` (${S.conn_error})`:"");}
+  else if(S.wind_locked && S.wind_override_until*1000>Date.now()){b.className="banner ovr"; t.textContent=`⚠ Verrou vent IGNORÉ jusqu'à ${hm(S.wind_override_until)} — ${windTxt()}`;}
+  else if(S.wind_locked){b.className="banner wind"; t.textContent=`💨 VERROU VENT — ${windTxt()} · antenne au repos`+(S.operating?"":" (hors opération)");}
+  else if(S.operating){b.className="banner op"; t.textContent=(S.callsign?`EN OPÉRATION — ${S.callsign}`:"EN OPÉRATION")+" · "+modeTxt();}
+  else {b.className="banner off"; t.textContent="Hors opération — le rotor ne bougera pas";}
+
+  $("#swOperating").checked=!!S.operating; $("#swBlock").checked=!!S.block_virtual;
+  $("#selPath").value=S.wsjtx_path||"short";
+  $("#elIn").classList.toggle("hidden",!S.elevation); $("#elManual").classList.toggle("hidden",!S.elevation);
+
+  const c=S.clients||{};
+  $("#counts").textContent=`Web : ${c.web||0} · Port virtuel : ${c.virtual||0} · rotctld : ${c.rotctld||0}`;
+  if(S.ports) $("#foot").innerHTML=`RotorWeb v${S.version}<br>Grid ${esc(S.grid||"non défini")}<br>COM virtuel : TCP ${S.ports.gs232}`+(S.ports.rotctld?`<br>rotctld : TCP ${S.ports.rotctld}`:"");
+
+  renderPresets(); renderHistory(); renderWsjtx(); renderPos(); updateGrid(true);
+  renderModes(); renderSched(); renderRest(); renderWind(); renderMqttStatus(); renderSetup(); renderLive(); renderTrack(true);
+  renderMini(); renderProfiles(); renderSatSettings(); renderSystem(); renderUpdate();
+  if(wsOk && S.version && !S.grid && !shownGridHint){shownGridHint=true; toast("Définis ton grid dans les réglages ⚙ pour le calcul des caps","warn"); }
+}
+let shownGridHint=false;
+function renderPos(){
+  const az=S.az, el=S.el;
+  if(az===null||az===undefined){$("#az").textContent="---"; $("#sub").innerHTML="&nbsp;"; return;}
+  const disp=((az%360)+360)%360;
+  $("#az").textContent=String(disp).padStart(3,"0");
+  $("#hdrAz").textContent=String(disp).padStart(3,"0")+"°";
+  needleDisp=contRot(needleDisp,disp); $("#needle").style.transform=`rotate(${needleDisp}deg)`;
+  $("#beam").style.transform=`rotate(${needleDisp}deg)`;
+  let sub=[];
+  if(az>=360) sub.push(`chevauchement (${az}°)`);
+  if(S.elevation && el!==null && el!==undefined) sub.push(`Élévation ${el}°`);
+  const tg=$("#target");
+  if(S.target_az!==null && S.target_az!==undefined){
+    tg.classList.remove("hidden"); targetDisp=contRot(targetDisp,S.target_az%360);
+    tg.style.transform=`rotate(${targetDisp}deg)`; sub.push(`→ vers ${S.target_az%360}°`);
+  } else tg.classList.add("hidden");
+  $("#sub").textContent=sub.join(" · ")||" ";
+}
+function renderPresets(){
+  const box=$("#presets"); box.innerHTML="";
+  (S.presets||[]).forEach((p,i)=>{
+    const c=document.createElement("span"); c.className="chip";
+    c.innerHTML=`<span></span><small>${p.az}°</small><span class="x" title="Supprimer">✕</span>`;
+    c.firstChild.textContent=p.name;
+    c.onclick=e=>{ if(e.target.classList.contains("x")){ if(ask(`Supprimer « ${p.name} » ?`)) send({cmd:"preset_del",index:i}); } else goto(p.az,null,p.name); };
+    box.appendChild(c);
+  });
+  if(!(S.presets||[]).length) box.innerHTML=`<span class="muted" style="font-size:13px">Aucun préréglage</span>`;
+}
+function renderHistory(){
+  const box=$("#history"); box.innerHTML="";
+  const h=S.history||[];
+  h.forEach(g=>{ const c=document.createElement("span"); c.className="chip"; c.textContent=g;
+    c.onclick=()=>{$("#gridIn").value=g; lkSel=null; $("#lkRes").innerHTML=""; updateGrid(); if(!GRID_RE.test(g.toUpperCase())) doLookup();}; box.appendChild(c); });
+  if(h.length){ const c=document.createElement("span"); c.className="chip"; c.innerHTML=`<small>effacer</small>`;
+    c.onclick=()=>send({cmd:"history_clear"}); box.appendChild(c); }
+}
+function renderWsjtx(){
+  const w=S.wsjtx||{}, box=$("#wsjtxInfo");
+  const age=w.seen?Math.round(Date.now()/1000-w.seen):null;
+  const alive=age!==null && age<30;
+  const rows=[
+    ["État", alive?`<b style="color:var(--ok)">reçu</b> (${esc(w.id||"WSJT-X")})`:`<span class="muted">aucun message${age!==null?` depuis ${fmtAge(age)}`:""}</span>`],
+    ["DX", w.dx_call?esc(w.dx_call):"—"],
+    ["Grid", w.dx_grid?esc(w.dx_grid):"—"],
+    ["Cap", w.bearing!=null?`${w.bearing}° · ${w.distance} km`:"—"],
+    ["Mode", w.mode?`${esc(w.mode)} · ${(w.freq/1e6).toFixed(3)} MHz`:"—"],
+  ];
+  box.innerHTML=rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join("");
+  $("#wsjtxPoint").disabled=(w.bearing==null);
+}
+function fmtAge(s){return s<120?`${s} s`:s<7200?`${Math.round(s/60)} min`:`${Math.round(s/3600)} h`;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+setInterval(()=>{ if(S.wsjtx) renderWsjtx(); },5000);
+
+/* ---------- Pointer vers un grid, un indicatif ou une ville ---------- */
+let gridCalc=null, lkSel=null, lkResults=[], lkTimer=null;
+const CALL_RE=/^(?:[A-Z0-9]{1,4}\/)?[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}[A-Z](?:\/[A-Z0-9]{1,4})?$/;
+function lkKind(q){ const u=q.trim().toUpperCase().replace(/\s/g,""); if(GRID_RE.test(u)) return "grid"; if(CALL_RE.test(u)) return "call"; return q.trim().length>=2?"city":""; }
+function updateGrid(fromRender){
+  const q=$("#gridIn").value.trim(), kind=lkKind(q), from=S.grid?gridToLatLon(S.grid):null;
+  gridCalc=null;
+  if(kind==="grid"){
+    const g=q.toUpperCase().replace(/\s/g,""), to=gridToLatLon(g);
+    if(!fromRender){ $("#lkRes").innerHTML=""; lkSel=null; }
+    if(to && from){ const [b,d]=bearingDist(from,to); gridCalc={g, label:g, sp:Math.round(b)%360, lp:Math.round(b+180)%360, d:Math.round(d)}; }
+  } else if(lkSel && lkSel.sp!=null){
+    gridCalc={g:lkSel.grid||"", label:lkSel.label, sp:lkSel.sp, lp:lkSel.lp, d:lkSel.km, approx:lkSel.approx};
+  }
+  if(gridCalc){
+    $("#gSP").textContent=gridCalc.sp+"°"; $("#gLP").textContent=gridCalc.lp+"°";
+    $("#gDist").textContent=`${gridCalc.d.toLocaleString("fr-CA")} km court · ${(40030-gridCalc.d).toLocaleString("fr-CA")} km long`+(gridCalc.approx?" · position approximative (préfixe)":"");
+  } else {
+    $("#gSP").textContent="—"; $("#gLP").textContent="—";
+    $("#gDist").textContent = !from? "Définis ton grid dans les réglages ⚙" : (kind==="call"||kind==="city"?(lkBusy?"Recherche…":"Touche 🔎 ou Entrée pour chercher"):" ");
+  }
+  $("#spBtn").disabled=$("#lpBtn").disabled=!gridCalc;
+}
+let lkBusy=false;
+function doLookup(){
+  const q=$("#gridIn").value.trim(); if(!q) return;
+  if(lkKind(q)==="grid"){ updateGrid(); return; }
+  lkBusy=true; lkSel=null; $("#lkRes").innerHTML=`<span class="muted" style="font-size:13px">Recherche…</span>`; updateGrid();
+  send({cmd:"lookup",q});
+}
+function onLookup(m){
+  if(m.q.trim()!==$("#gridIn").value.trim()) return;
+  lkBusy=false; lkResults=m.results||[]; const box=$("#lkRes"); box.innerHTML="";
+  if(m.no_home) box.insertAdjacentHTML("beforeend",`<span style="color:var(--warn);font-size:13px">Définis ton grid dans les réglages ⚙</span>`);
+  if(!lkResults.length){ box.insertAdjacentHTML("beforeend",`<span class="muted" style="font-size:13px">Rien trouvé${m.notes&&m.notes.length?" ("+esc(m.notes.join(" · "))+")":""}</span>`); updateGrid(); return; }
+  lkResults.forEach((r,i)=>{ const b=document.createElement("button"); b.type="button";
+    b.innerHTML=`<b></b> <small class="muted">${esc(r.grid||"")}${r.sp!=null?` · ${r.sp}°`:""} · ${esc(r.source==="prefix"?"préfixe":r.source)}</small>`;
+    b.querySelector("b").textContent=r.label; b.onclick=()=>{ lkSel=r; [...box.querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b)); updateGrid(); };
+    box.appendChild(b); });
+  if(m.notes&&m.notes.length) box.insertAdjacentHTML("beforeend",`<span class="muted" style="font-size:12px">${esc(m.notes.join(" · "))}</span>`);
+  box.querySelector("button").click();
+}
+$("#gridIn").addEventListener("input",()=>{ lkSel=null; $("#lkRes").innerHTML=""; updateGrid(); });
+$("#gridIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ if(gridCalc && (lkKind($("#gridIn").value)==="grid"||lkSel)) $("#spBtn").click(); else doLookup(); } });
+$("#lkBtn").onclick=doLookup;
+$("#spBtn").onclick=()=>gridCalc && goto(gridCalc.sp,null,`${gridCalc.label} (court)`,gridCalc.g);
+$("#lpBtn").onclick=()=>gridCalc && goto(gridCalc.lp,null,`${gridCalc.label} (long)`,gridCalc.g);
+
+/* ---------- Actions ---------- */
+function goto(az,el,label,grid){
+  const o={cmd:"goto",az:az}; if(el!==null && el!==undefined && el!=="") o.el=+el;
+  if(label) o.label=label; if(grid) o.grid=grid; send(o);
+}
+$("#goBtn").onclick=()=>{
+  const v=$("#azIn").value; if(v===""){toast("Entre un azimut","warn");return;}
+  const a=+v; if(isNaN(a)||a<0||a>359){toast("Azimut entre 0 et 359","warn");return;}
+  goto(a, S.elevation?$("#elIn").value:null);
+};
+$("#azIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("#goBtn").click();});
+$("#stopBtn").onclick=()=>send({cmd:"stop"});
+$("#estop").onclick=()=>send({cmd:"estop"});
+$("#rearmBtn").onclick=()=>{ if(ask("Réarmer le rotor ?\nVérifie que l'antenne et les alentours sont sécuritaires.")) send({cmd:"rearm"}); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ e.preventDefault(); send({cmd:"estop"}); toast("Arrêt d'urgence (Échap)","error"); } });
+$("#swOperating").onchange=e=>send({cmd:"set",key:"operating",value:e.target.checked});
+$("#swBlock").onchange=e=>send({cmd:"set",key:"block_virtual",value:e.target.checked});
+$("#selPath").onchange=e=>send({cmd:"set",key:"wsjtx_path",value:e.target.value});
+$("#wsjtxPoint").onclick=()=>send({cmd:"wsjtx_point"});
+$("#addPreset").onclick=()=>{
+  if(S.az==null){toast("Position inconnue","warn");return;}
+  const az=((S.az%360)+360)%360, n=prompt(TR(`Nom du préréglage pour ${az}° :`),"");
+  if(n && n.trim()) send({cmd:"preset_add",name:n.trim(),az:az});
+};
+
+/* Rotation manuelle : maintenir le bouton (sécurité : arrêt auto si relâché ou connexion perdue) */
+let holdTimer=null, holdBtn=null;
+function holdStart(btn){ if(holdBtn) return; holdBtn=btn; btn.classList.add("active");
+  send({cmd:"manual",dir:btn.dataset.dir}); holdTimer=setInterval(()=>send({cmd:"manual_keep"}),300); }
+function holdEnd(){ if(!holdBtn) return; holdBtn.classList.remove("active"); holdBtn=null;
+  clearInterval(holdTimer); holdTimer=null; send({cmd:"manual_end"}); }
+document.querySelectorAll(".hold").forEach(b=>{
+  b.addEventListener("pointerdown",e=>{e.preventDefault(); b.setPointerCapture(e.pointerId); holdStart(b);});
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>b.addEventListener(ev,holdEnd));
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+});
+window.addEventListener("blur",holdEnd);
+
+/* Réglages */
+function fillSettings(){
+  $("#sCall").value=S.callsign||""; $("#sGrid").value=S.grid||""; $("#sTz").value=S.timezone||"America/Toronto"; $("#sLang").value=S.lang||"fr";
+  const lk=S.lookup||{}; $("#lkSource").value=lk.source||"both"; $("#lkHU").value=lk.hamqth_user||""; $("#lkQU").value=lk.qrz_user||"";
+  $("#lkHP").value=""; $("#lkHP").placeholder=lk.hamqth_has_pass?TR("•••••••• (enregistré — laisser vide pour garder)"):"";
+  $("#lkQP").value=""; $("#lkQP").placeholder=lk.qrz_has_pass?TR("•••••••• (enregistré — laisser vide pour garder)"):"";
+  const e=S.email||{}; $("#eEnabled").checked=!!e.enabled; $("#eUser").value=e.username||""; $("#eTo").value=e.to||"";
+  const m=S.mqtt||{}; $("#hEnabled").checked=!!m.enabled; $("#hHost").value=m.host||""; $("#hPort").value=m.port||1883; $("#hUser").value=m.username||"";
+  $("#hPass").value=""; $("#hPass").placeholder=m.has_password?"•••••••• (enregistré — laisser vide pour garder)":""; renderMqttStatus();
+  $("#ePass").value=""; $("#ePass").placeholder=e.has_password?"•••••••• (enregistré — laisser vide pour garder)":"16 lettres (voir le guide)";
+  $("#sPorts").textContent=S.ports?`Port COM virtuel : TCP ${S.ports.gs232} · rotctld : ${S.ports.rotctld||"désactivé"} · Web : ${S.ports.web}`:"";
+}
+$("#sSave").onclick=()=>{ const g=$("#sGrid").value.trim().toUpperCase();
+  if(g && !GRID_RE.test(g)){toast("Grid invalide (ex. FN48 ou FN48ji)","warn");return;}
+  send({cmd:"settings",callsign:$("#sCall").value,grid:g,timezone:$("#sTz").value.trim(),lang:$("#sLang").value}); };
+function emailPayload(){ return {enabled:$("#eEnabled").checked,username:$("#eUser").value,to:$("#eTo").value,password:$("#ePass").value}; }
+const hPayload=()=>({enabled:$("#hEnabled").checked,host:$("#hHost").value.trim(),port:+$("#hPort").value||1883,username:$("#hUser").value.trim(),password:$("#hPass").value});
+$("#hSave").onclick=()=>{ send({cmd:"mqtt_save",...hPayload()}); $("#hPass").value=""; };
+function renderMqttStatus(){
+  const m=S.mqtt||{}, el=$("#hStatus"); if(!el) return;
+  if(!m.enabled) el.innerHTML="Entités créées automatiquement dans Home Assistant";
+  else if(m.connected) el.innerHTML=`<span style="color:var(--ok)">✔ Connecté</span> · appareil « ${esc(m.node)} »`;
+  else el.innerHTML=`<span style="color:var(--warn)">Connexion en cours…</span>${m.error?` <span style="color:var(--bad)">${esc(m.error)}</span>`:""}`;
+}
+$("#eSave").onclick=()=>{ send({cmd:"email_save",...emailPayload()}); $("#ePass").value=""; };
+$("#eTest").onclick=()=>{ send({cmd:"email_save",...emailPayload()}); $("#ePass").value=""; setTimeout(()=>send({cmd:"email_test"}),300); toast("Envoi du courriel test…","ok"); };
+
+/* ---------- Console trafic ---------- */
+let logs=[], paused=false;
+const srcName={virtual:"PC",rotctld:"rotctld",wsjtx:"WSJT-X",k3ng:"Contrôleur",web:"Web",system:"Système",schedule:"Horaire",wind:"Vent",ha:"Home Assistant",track:"Suivi"};
+function srcOn(src){ const cb=document.querySelector(`.conctl input[data-src="${src}"]`); return !cb||cb.checked; }
+function fmtEntry(e){
+  const dt=new Date(e.t*1000), z=n=>String(n).padStart(2,"0"); const tm=`${z(dt.getHours())}:${z(dt.getMinutes())}:${z(dt.getSeconds())}`;
+  const peer=e.peer?` ${e.peer}`:""; let txt;
+  if(e.src==="virtual"||e.src==="rotctld"){
+    const who=e.src==="virtual"?"PC":"rotctld";
+    txt = e.dir==="rx"?`${who}${peer} → ${e.text}` : e.dir==="tx"?`→ ${who}${peer}  ${e.text}` : `${who}${peer} · ${e.text}`;
+  } else if(e.src==="k3ng"){
+    txt = e.dir==="tx"?`RPi → contrôleur  ${e.text}`:`Contrôleur → RPi  ${e.text}`;
+  } else txt=`${srcName[e.src]||e.src}${e.src==="web"?peer:""} · ${e.text}`;
+  const d=document.createElement("div"); d.className="l "+(e.blocked?"blocked":e.src);
+  d.innerHTML=`<span class="tm">${tm}</span>  `; d.appendChild(document.createTextNode((e.blocked?"⛔ ":"")+txt));
+  return d;
+}
+function visible(e){ return srcOn(e.src) && !(e.poll && $("#hidePoll").checked); }
+function addLog(e){
+  logs.push(e); if(logs.length>1500) logs.splice(0,logs.length-1500);
+  if(visible(e)) renderMiniCon();
+  if(paused||!visible(e)) return;
+  const con=$("#console"), atBottom=con.scrollHeight-con.scrollTop-con.clientHeight<30;
+  con.appendChild(fmtEntry(e)); while(con.childNodes.length>600) con.removeChild(con.firstChild);
+  if(atBottom) con.scrollTop=con.scrollHeight;
+}
+function renderLogs(){
+  const con=$("#console"); con.innerHTML=""; const f=document.createDocumentFragment();
+  logs.filter(visible).slice(-600).forEach(e=>f.appendChild(fmtEntry(e))); con.appendChild(f); con.scrollTop=con.scrollHeight;
+  renderMiniCon();
+}
+document.querySelectorAll(".conctl input").forEach(cb=>cb.addEventListener("change",renderLogs));
+$("#pauseBtn").onclick=()=>{ paused=!paused; $("#pauseBtn").textContent=paused?"▶ Reprendre":"⏸ Pause"; if(!paused) renderLogs(); };
+$("#clearBtn").onclick=()=>{ logs=[]; renderLogs(); };
+
+
+/* ---------- Toasts ---------- */
+function toast(text,level="ok"){
+  const t=document.createElement("div"); t.className="toast "+level; t.textContent=TR(text);
+  $("#toasts").appendChild(t); setTimeout(()=>t.remove(),3500);
+}
+
+/* ---------- Modes / horaires / vent ---------- */
+function hm(ts){ const d=new Date(ts*1000),z=n=>String(n).padStart(2,"0"); return `${z(d.getHours())}:${z(d.getMinutes())}`; }
+function windTxt(){ const w=S.weather||{}; return w.speed==null?"météo inconnue":`vent ${w.speed} km/h, rafales ${w.gust} km/h`; }
+function modeTxt(){
+  const m=S.mode, sc=S.sched||{};
+  if(m==="schedule") return sc.active?`Horaire · ${sc.active} jusqu'à ${sc.until}`:`Horaire · aucune plage en cours`+(sc.next?` (prochaine : ${sc.next_at})`:"");
+  if(m==="track"){ const n=(S.track||{}).now||{}; return n.name?`Suivi · ${n.name}${n.above?"":" (sous l'horizon)"}`:"Suivi · aucune cible"; }
+  return "Manuel";
+}
+function renderModes(){
+  document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
+  const sc=S.sched||{}; let txt="";
+  if(S.mode==="schedule") txt=sc.active?`▶ ${sc.active} — jusqu'à ${sc.until}`:(sc.next?`Prochaine plage : ${sc.next} (${sc.next_at})`:"Aucune plage programmée — voir l'onglet Horaire");
+  else if(S.mode==="track"){ const n=(S.track||{}).now||{}; txt=n.name?(n.above?`🛰 ${n.name} — az ${Math.round(n.az)}° él ${Math.round(n.el)}°`:(n.next?`🛰 ${n.name} sous l'horizon — lever ${fmtDay(n.next.aos)}`:`🛰 ${n.name} sous l'horizon`)):"Choisis une cible dans la page Suivi"; }
+  else txt="Commandes manuelles seulement";
+  $("#modeInfo").textContent=txt;
+}
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>send({cmd:"set_mode",mode:b.dataset.mode}));
+
+function renderSched(){
+  const sc=S.sched||{}; $("#tzLbl").textContent=S.timezone?`· heure locale ${sc.now||""}`:"";
+  $("#schedNow").innerHTML = (S.mode!=="schedule"?`<span style="color:var(--warn)">Mode Horaire inactif</span> — `:"")
+    + (sc.active?`En cours : <b style="color:var(--text)">${esc(sc.active)}</b> jusqu'à ${sc.until}`:(sc.next?`Prochaine : ${esc(sc.next)} · ${sc.next_at}`:"Aucune plage"));
+  const box=$("#schedList"); box.innerHTML="";
+  (S.schedules||[]).forEach(x=>{
+    const d=document.createElement("div"); d.className="sched"+(x.id===sc.active_id?" active":"")+(x.enabled===false?" off":"");
+    const days=x.days.length===7?"Tous les jours":(x.days.join()==="0,1,2,3,4"?"Semaine":(x.days.join()==="5,6"?"Fin de semaine":x.days.map(i=>D(i)).join(" ")));
+    d.innerHTML=`<div class="info"><b>${x.start}–${x.end}</b> ${x.name?"· "+esc(x.name):""}<div>${esc(x.label)} · ${days}</div></div>
+      <label class="toggle" title="Activer"><input type="checkbox" ${x.enabled!==false?"checked":""}><i></i></label>
+      <button title="Modifier">✎</button><button title="Supprimer">✕</button>`;
+    d.querySelector("input").onchange=e=>send({cmd:"sched_toggle",id:x.id,enabled:e.target.checked});
+    const [bE,bD]=d.querySelectorAll("button");
+    bE.onclick=()=>openSched(x);
+    bD.onclick=()=>{ if(ask(`Supprimer la plage ${x.start}–${x.end} ?`)) send({cmd:"sched_del",id:x.id}); };
+    box.appendChild(d);
+  });
+  if(!(S.schedules||[]).length) box.innerHTML=`<p class="muted" style="font-size:13px">Aucune plage. Ex. : 06:00–09:00 Japon, 21:00–23:30 Amérique du Sud.</p>`;
+  if(!S.grid) box.insertAdjacentHTML("afterbegin",`<p style="color:var(--warn);font-size:13px">⚠ Définis le grid de la station (⚙) pour calculer les caps des régions.</p>`);
+}
+let editId=null;
+(function(){ const box=$("#scDays"); DAYS_FR.forEach((d,i)=>{ box.insertAdjacentHTML("beforeend",`<label><input type="checkbox" value="${i}"><span class="notr">${D(i)}</span></label>`); }); })();
+function fillRegions(){
+  const sel=$("#scRegion"), cur=sel.value; sel.innerHTML="";
+  (S.regions||[]).forEach(r=>sel.insertAdjacentHTML("beforeend",`<option value="${r.key}">${esc(r.name)}${r.bearing!=null?` — ${r.bearing}°`:""}</option>`));
+  if(cur) sel.value=cur;
+}
+function scPreview(){
+  const t=$("#scType").value; ["#scRegion","#scGrid","#scAz","#scTrack"].forEach(id=>$(id).classList.add("hidden"));
+  $({region:"#scRegion",grid:"#scGrid",az:"#scAz",track:"#scTrack"}[t]).classList.remove("hidden");
+  let txt="", from=S.grid?gridToLatLon(S.grid):null;
+  if(t==="region"){ const r=(S.regions||[]).find(r=>r.key===$("#scRegion").value); if(r) txt=r.bearing!=null?`→ ${r.bearing}° vers ${r.name}`:"⚠ grid de la station non défini"; }
+  else if(t==="grid"){ const to=gridToLatLon($("#scGrid").value); txt=(to&&from)?`→ ${Math.round(bearingDist(from,to)[0])%360}° · ${Math.round(bearingDist(from,to)[1])} km`:($("#scGrid").value?"Grid invalide":""); }
+  else if(t==="track"){ txt="Le rotor suit la cible pendant la plage (quand elle est au-dessus de l'horizon)."; }
+  else { const v=$("#scAz").value; txt=v!==""?`→ ${(+v)%360}°`:""; }
+  $("#scPreview").textContent=txt;
+}
+["#scType","#scRegion","#scGrid","#scAz","#scTrack"].forEach(id=>$(id).addEventListener("input",scPreview));
+function openSched(x){
+  fillRegions(); editId=x?x.id:null; $("#schedTitle").textContent=x?"Modifier la plage":"Nouvelle plage";
+  $("#scName").value=x?x.name||"":""; $("#scStart").value=x?x.start:"06:00"; $("#scEnd").value=x?x.end:"09:00";
+  const days=x?x.days:[0,1,2,3,4,5,6]; document.querySelectorAll("#scDays input").forEach(c=>c.checked=days.includes(+c.value));
+  const t=x?x.target:{type:"region",value:"japon"}; $("#scType").value=t.type;
+  fillTargetSelect($("#scTrack"), t.type==="track"?t.value:"moon");
+  if(t.type==="region") $("#scRegion").value=t.value; else if(t.type==="grid") $("#scGrid").value=t.value; else if(t.type==="track") $("#scTrack").value=t.value; else $("#scAz").value=t.value;
+  scPreview(); $("#schedDlg").showModal();
+}
+$("#addSched").onclick=()=>openSched(null);
+$("#scCancel").onclick=()=>$("#schedDlg").close();
+$("#scSave").onclick=()=>{
+  const t=$("#scType").value, value=t==="region"?$("#scRegion").value:(t==="grid"?$("#scGrid").value.trim().toUpperCase():(t==="track"?$("#scTrack").value:$("#scAz").value));
+  if(!$("#scStart").value||!$("#scEnd").value){toast("Heure de début et de fin requises","warn");return;}
+  if(value===""){toast("Choisis une direction","warn");return;}
+  const days=[...document.querySelectorAll("#scDays input:checked")].map(c=>+c.value);
+  if(!days.length){toast("Choisis au moins un jour","warn");return;}
+  const old=(S.schedules||[]).find(x=>x.id===editId);
+  send({cmd:"sched_save",item:{id:editId,name:$("#scName").value,start:$("#scStart").value,end:$("#scEnd").value,days,target:{type:t,value},enabled:old?old.enabled!==false:true}});
+  $("#schedDlg").close();
+};
+
+function renderRest(){
+  const r=S.rest||{}; if(document.activeElement!==$("#restAz")) $("#restAz").value=r.az??0;
+  $("#restAlign").checked=!!r.wind_align;
+  $("#restNow").textContent=`Position de repos actuelle : ${S.rest_az}°`+(r.wind_align?((S.weather||{}).dir!=null?` (axe du vent ${S.weather.dir}°)`:" (direction du vent inconnue → azimut fixe)"):"");
+}
+$("#restSave").onclick=()=>send({cmd:"rest_save",az:$("#restAz").value||0,wind_align:$("#restAlign").checked});
+$("#restBtn").onclick=()=>send({cmd:"go_rest"});
+
+let windFormInit=false;
+function renderWind(){
+  const w=S.weather||{}, cfg=S.wind||{};
+  $("#wxS b").textContent=w.speed??"—"; $("#wxG b").textContent=w.gust??"—";
+  $("#wxD b").textContent=w.dir!=null?w.dir+"°":"—";
+  $("#wxS").classList.toggle("over",w.speed!=null&&w.speed>cfg.max_speed);
+  $("#wxG").classList.toggle("over",w.gust!=null&&w.gust>cfg.max_gust);
+  const ovr=S.wind_override_until*1000>Date.now(); let st;
+  if(!cfg.enabled) st=`<span style="color:var(--warn)">Protection désactivée</span>`;
+  else if(S.wind_locked&&ovr) st=`<b style="color:var(--warn)">⚠ Verrou ignoré jusqu'à ${hm(S.wind_override_until)}</b>`;
+  else if(S.wind_locked) st=`<b style="color:var(--bad)">💨 VERROU VENT ACTIF</b>`+(S.wind_calm_since?` — déverrouillage vers ${hm(S.wind_calm_since+cfg.clear_minutes*60)} si le calme se maintient`:"");
+  else st=`<span style="color:var(--ok)">✔ Rotor libre</span>`;
+  if(cfg.source==="ha" && !w.fetched) st+=` · <span style="color:var(--warn)">en attente des données de Home Assistant</span>`;
+  else if(cfg.source==="ha" && Date.now()/1000-w.fetched>1800) st+=` · <span style="color:var(--warn)">aucune donnée de HA depuis ${hm(w.fetched)}</span>`;
+  if(w.error) st+=` · <span style="color:var(--warn)">météo indisponible (${esc(w.error)})</span>`;
+  else if(w.fetched) st+=` · mise à jour ${hm(w.fetched)}${w.simulated?" (simulation)":(cfg.source==="ha"?" (Home Assistant)":"")}`;
+  $("#wxStatus").innerHTML=st;
+  $("#ovrBtn").classList.toggle("hidden",!S.wind_locked||ovr); $("#ovrCancel").classList.toggle("hidden",!ovr);
+  if(!windFormInit && S.wind){ windFormInit=true; $("#wSource").value=cfg.source||"openmeteo"; $("#wEnabled").checked=!!cfg.enabled; $("#wMax").value=cfg.max_speed; $("#wGust").value=cfg.max_gust; $("#wClear").value=cfg.clear_minutes; }
+}
+$("#wSave").onclick=()=>send({cmd:"wind_save",source:$("#wSource").value,enabled:$("#wEnabled").checked,max_speed:+$("#wMax").value,max_gust:+$("#wGust").value,clear_minutes:+$("#wClear").value});
+$("#wRefresh").onclick=()=>{ send({cmd:"weather_refresh"}); toast("Météo en cours de rafraîchissement…","ok"); };
+function openOverride(){ $("#ovrTxt").textContent=`Météo actuelle : ${windTxt()}. Bouger l'antenne quand même ?`; $("#ovrDlg").showModal(); }
+$("#ovrBtn").onclick=openOverride; $("#bOvr").onclick=openOverride;
+$("#ovrNo").onclick=()=>$("#ovrDlg").close();
+$("#ovrYes").onclick=()=>{ send({cmd:"wind_override",minutes:+$("#ovrMin").value}); $("#ovrDlg").close(); };
+$("#ovrCancel").onclick=()=>send({cmd:"wind_override_cancel"});
+setInterval(()=>{ if(S.version){ renderWind(); } },15000);
+
+/* ---------- Réglage : contrôleur, course, calibration ---------- */
+const DIY=["arduino","gpio"];
+let setupSig="";
+function drvKind(k){ const d=(S.drivers||[]).find(x=>x.key===k); return d?d.kind:"serial"; }
+function showDrvFields(){
+  const k=$("#dDriver").value, kind=drvKind(k);
+  $("#dSerial").classList.toggle("hidden",kind!=="serial");
+  $("#dTcp").classList.toggle("hidden",kind!=="tcp");
+  $("#dGpio").classList.toggle("hidden",kind!=="gpio");
+  $("#dR2p").classList.toggle("hidden",k!=="rot2prog");
+  const d=(S.drivers||[]).find(x=>x.key===k); $("#dBaud").placeholder=d&&d.baud?`défaut ${d.baud}`:"";
+}
+$("#dDriver").addEventListener("change",showDrvFields);
+function renderSetup(){
+  const r=S.rotor; if(!r) return;
+  document.querySelectorAll(".elonly").forEach(e=>e.classList.toggle("hidden",!S.elevation));
+  const isDiy=DIY.includes(r.driver);
+  document.querySelectorAll(".diyonly").forEach(e=>e.classList.toggle("hidden",!isDiy));
+  $("#calDiy").classList.toggle("hidden",!isDiy);
+  $("#calGs").classList.toggle("hidden",!["gs232a","gs232b"].includes(r.driver));
+  $("#calOther").classList.toggle("hidden",isDiy||["gs232a","gs232b"].includes(r.driver));
+  const sig=JSON.stringify([r.driver,r.serial_port,r.baud,r.tcp_host,r.tcp_port,r.gpio,r.stop_at,r.range,r.path,r.anticipation,r.stall_seconds,r.deadtime,r.el_range,r.rot2prog_ph,(S.drivers||[]).length]);
+  if(sig!==setupSig){
+    setupSig=sig;
+    $("#dDriver").innerHTML=(S.drivers||[]).map(d=>`<option value="${d.key}">${esc(d.label)}</option>`).join("");
+    $("#dDriver").value=r.driver; $("#dPort").value=r.serial_port||""; $("#dBaud").value=r.baud||"";
+    $("#dHost").value=r.tcp_host||""; $("#dTcpPort").value=r.tcp_port||""; $("#dPh").value=String(r.rot2prog_ph||2);
+    const g=r.gpio||{}; $("#gCw").value=g.cw; $("#gCcw").value=g.ccw; $("#gUp").value=g.up; $("#gDown").value=g.down;
+    $("#gAds").value=(g.ads_address??72).toString(16); $("#gChAz").value=String(g.ads_ch_az??0); $("#gChEl").value=String(g.ads_ch_el??1); $("#gLow").checked=g.active_low!==false;
+    $("#cStop").value=String(r.stop_at||0); if(![...$("#cRange").options].some(o=>o.value==String(r.range))) $("#cRange").insertAdjacentHTML("beforeend",`<option>${r.range}</option>`);
+    $("#cRange").value=String(r.range); $("#cPath").value=r.path||"short"; $("#cStall").value=r.stall_seconds; $("#cAntic").value=r.anticipation; $("#cDead").value=r.deadtime; $("#cElR").value=String(r.el_range||180);
+    showDrvFields();
+  }
+  $("#cNote").textContent=isDiy?"Changer la butée ou l'amplitude demande de refaire la calibration.":
+    "Avec ce contrôleur, la course sert au calcul du chemin et à l'affichage ; les butées sont gérées par le contrôleur lui-même.";
+  const ng=$("#nogoList"); ng.innerHTML="";
+  (r.no_go||[]).forEach((z,i)=>{ const c=document.createElement("span"); c.className="chip";
+    c.innerHTML=`⛔ ${z[0]}°–${z[1]}° <span class="x">✕</span>`; c.querySelector(".x").onclick=()=>send({cmd:"nogo_del",index:i}); ng.appendChild(c); });
+  if(!(r.no_go||[]).length) ng.innerHTML=`<span class="muted" style="font-size:13px">Aucune zone interdite</span>`;
+  $("#offNow").textContent=`Décalage actuel : ${(+r.offset||0)>=0?"+":""}${(+r.offset||0).toFixed(1)}° (azimut affiché = azimut du rotor + décalage)`;
+  const tb=$("#calPts"); tb.innerHTML="";
+  (r.cal_az||[]).forEach((p,i)=>{ const tr=document.createElement("tr");
+    const az=((+r.stop_at+p[1])%360+((+r.offset||0))+360)%360;
+    tr.innerHTML=`<td>${p[0]}</td><td>${(+p[1]).toFixed(1)}°</td><td>${Math.round(az)}°</td><td><button>✕</button></td>`;
+    tr.querySelector("button").onclick=()=>send({cmd:"cal_del",axis:"az",index:i}); tb.appendChild(tr); });
+  const te=$("#calElPts"); te.innerHTML="";
+  (r.cal_el||[]).forEach((p,i)=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td>brut ${p[0]}</td><td>${(+p[1]).toFixed(1)}°</td><td><button>✕</button></td>`;
+    tr.querySelector("button").onclick=()=>send({cmd:"cal_del",axis:"el",index:i}); te.appendChild(tr); });
+  const pts=r.cal_az||[]; const has0=pts.some(p=>+p[1]===0), hasMax=pts.some(p=>+p[1]===+r.range);
+  $("#st1").classList.toggle("done",has0); $("#st1").textContent=has0?"✓":"1";
+  $("#st2").classList.toggle("done",hasMax); $("#st2").textContent=hasMax?"✓":"2";
+  $("#st3").classList.toggle("done",pts.length>2); $("#st3").textContent=pts.length>2?"✓":"3";
+  drawCourse();
+}
+function renderLive(){
+  const L=S.live||{}, r=S.rotor||{};
+  const isDiy=DIY.includes(r.driver);
+  let t=S.connected?`<span style="color:var(--ok)">✔ Connecté</span>`:`<span style="color:var(--bad)">✖ Non connecté</span>${S.conn_error?" — "+esc(S.conn_error):""}`;
+  if(isDiy) t+=` · brut azimut ${L.raw_az??"—"}${S.elevation?` · brut élévation ${L.raw_el??"—"}`:""}`;
+  $("#dLive").innerHTML=t;
+  $("#rawAz").textContent=L.raw_az??"—"; $("#travelNow").textContent=L.travel!=null?L.travel:"—";
+  $("#relayNow").textContent=L.relay_az>0?"⟳ droite":(L.relay_az<0?"⟲ gauche":"arrêt");
+  $("#rawEl").textContent=`Valeur brute élévation : ${L.raw_el??"—"}`;
+  renderWizLive();
+  $("#calState").innerHTML=L.calibrated?`<span style="color:var(--ok)">✔ Azimut calibré</span> — le rotor peut être pointé`:
+    `<span style="color:var(--warn)">⚠ Calibration requise</span> — les boutons Gauche/Droite fonctionnent, mais pas le pointage`;
+  drawCourse();
+}
+function drawCourse(){
+  const r=S.rotor; if(!r) return; const rng=+r.range||450, st=+r.stop_at||0, W=300, x0=20;
+  const X=t=>x0+t/rng*W; const L=S.live||{};
+  let tr=L.travel; if(tr==null && S.az!=null && !DIY.includes(r.driver)){ const ra=((S.az%360)-(+r.offset||0)+360)%360; tr=((ra-st+360)%360)+(S.az>=360?360:0); }
+  const lab=t=>{ const a=(st+t)%360; return a===0?"N":a===90?"E":a===180?"S":a===270?WEST():a+"°"; };
+  let s=`<rect x="${x0}" y="22" width="${W}" height="14" rx="7" fill="var(--panel2)" stroke="var(--line)"/>`;
+  if(rng>360) s+=`<rect x="${X(360)}" y="22" width="${X(rng)-X(360)}" height="14" fill="var(--warn)" opacity=".25"/>`;
+  for(let t=0;t<=rng;t+=90) s+=`<line x1="${X(t)}" x2="${X(t)}" y1="36" y2="42" stroke="var(--muted)"/><text x="${X(t)}" y="54" font-size="10" text-anchor="middle" fill="var(--muted)">${lab(t)}</text>`;
+  s+=`<text x="${x0}" y="14" font-size="10" fill="var(--muted)">butée gauche</text><text x="${x0+W}" y="14" font-size="10" text-anchor="end" fill="var(--muted)">butée droite</text>`;
+  if(rng>360) s+=`<text x="${(X(360)+X(rng))/2}" y="32.5" font-size="8.5" text-anchor="middle" fill="var(--text)" opacity=".8">chevauch.</text>`;
+  if(tr!=null) s+=`<circle cx="${X(Math.max(0,Math.min(rng,tr)))}" cy="29" r="7" fill="var(--accent)"/>`;
+  $("#courseBar").innerHTML=s;
+}
+$("#dSave").onclick=()=>{
+  const g={cw:+$("#gCw").value,ccw:+$("#gCcw").value,up:+$("#gUp").value,down:+$("#gDown").value,active_low:$("#gLow").checked,
+           ads_address:parseInt($("#gAds").value||"48",16),ads_ch_az:+$("#gChAz").value,ads_ch_el:+$("#gChEl").value};
+  send({cmd:"rotor_save",driver:$("#dDriver").value,serial_port:$("#dPort").value,baud:+$("#dBaud").value||0,
+        tcp_host:$("#dHost").value,tcp_port:+$("#dTcpPort").value||4534,rot2prog_ph:+$("#dPh").value,gpio:g});
+};
+$("#cSave").onclick=()=>send({cmd:"course_save",stop_at:+$("#cStop").value,range:+$("#cRange").value,path:$("#cPath").value,
+  stall_seconds:+$("#cStall").value,anticipation:+$("#cAntic").value,deadtime:+$("#cDead").value,el_range:+$("#cElR").value});
+$("#ngAdd").onclick=()=>{ if($("#ngFrom").value===""||$("#ngTo").value===""){toast("Entre les deux angles de la zone","warn");return;}
+  send({cmd:"nogo_add",from:+$("#ngFrom").value,to:+$("#ngTo").value}); $("#ngFrom").value=$("#ngTo").value=""; };
+$("#offFix").onclick=()=>{ if($("#offReal").value===""){toast("Entre l'azimut réel","warn");return;} send({cmd:"offset_set",real:+$("#offReal").value}); $("#offReal").value=""; };
+$("#offSet").onclick=()=>{ if($("#offVal").value===""){toast("Entre un décalage","warn");return;} send({cmd:"offset_set",offset:+$("#offVal").value}); $("#offVal").value=""; };
+$("#calCcw").onclick=()=>send({cmd:"cal_end",axis:"az",which:"ccw"});
+$("#calCw").onclick=()=>send({cmd:"cal_end",axis:"az",which:"cw"});
+$("#calPt").onclick=()=>{ if($("#calDeg").value===""){toast("Entre l'azimut du repère","warn");return;} send({cmd:"cal_point",axis:"az",deg:+$("#calDeg").value}); $("#calDeg").value=""; };
+$("#calClear").onclick=()=>{ if(ask("Effacer toute la calibration de l'azimut ?")) send({cmd:"cal_clear",axis:"az"}); };
+$("#calStop").onclick=()=>send({cmd:"stop"});
+$("#calElDown").onclick=()=>send({cmd:"cal_end",axis:"el",which:"down"});
+$("#calElUp").onclick=()=>send({cmd:"cal_end",axis:"el",which:"up"});
+$("#calElPt").onclick=()=>{ if($("#calElDeg").value==="") return; send({cmd:"cal_point",axis:"el",deg:+$("#calElDeg").value}); $("#calElDeg").value=""; };
+["O","F","O2","F2"].forEach(w=>{ const b=$("#gs"+w); if(b) b.onclick=()=>{ if(confirm(TR(`Envoyer la commande de calibration ${w} au contrôleur ?`)+"\n"+TR(w.startsWith("O")?"Le rotor doit être en butée gauche/basse.":"Le rotor doit être en butée droite/haute."))) send({cmd:"cal_controller",which:w}); }; });
+
+/* ---------- Suivi satellites / Lune / Soleil ---------- */
+function fmtDay(ts){ const d=new Date(ts*1000), z=n=>String(n).padStart(2,"0"), today=new Date();
+  const same=d.toDateString()===today.toDateString(); return (same?"":J(d.getDay())+" ")+`${z(d.getHours())}:${z(d.getMinutes())}`; }
+function fmtHM(ts){ const d=new Date(ts*1000), z=n=>String(n).padStart(2,"0"); return `${z(d.getHours())}:${z(d.getMinutes())}`; }
+let targetsSig="", trackFormInit=false, lastPasses=null;
+function fillTargetSelect(sel, value){
+  const groups={}; (S.targets||[]).forEach(t=>{ (groups[t.group]=groups[t.group]||[]).push(t); });
+  sel.innerHTML=Object.entries(groups).map(([g,l])=>`<optgroup label="${esc(g)}">${l.map(t=>`<option value="${esc(t.key)}">${esc(t.name)}</option>`).join("")}</optgroup>`).join("");
+  if(value) sel.value=value;
+}
+function renderTrack(full){
+  const T=S.track; if(!T) return;
+  $("#tUnavail").classList.toggle("hidden",T.available);
+  const sig=(S.targets||[]).map(t=>t.key).join("|");
+  if(sig!==targetsSig){ targetsSig=sig; fillTargetSelect($("#tTarget"), T.settings.target||"moon"); if(route==="suivi") askPasses(); }
+  else if(full && document.activeElement!==$("#tTarget") && T.settings.target) $("#tTarget").value=T.settings.target;
+  const n=T.now||{};
+  const sel=T.sel||{};
+  const shown=n.key===$("#tTarget").value?n:(sel.key===$("#tTarget").value?sel:null);
+  $("#tAz").textContent=shown&&shown.az!=null?Math.round(shown.az)+"°":"—";
+  $("#tEl").textContent=shown&&shown.el!=null?Math.round(shown.el)+"°":"—";
+  $("#tRng").textContent=shown&&shown.range_km?(shown.range_km>99999?Math.round(shown.range_km/1000).toLocaleString("fr-CA")+" Mm":shown.range_km.toLocaleString("fr-CA")+" km"):"—";
+  let st="";
+  if(S.mode!=="track") st=`<span class="muted">Mode Suivi inactif${S.mode==="schedule"&&n.key?" (suivi par une plage horaire)":""}</span>`;
+  if(sel.key && sel.key!==n.key && sel.key===$("#tTarget").value){
+    st+=`${st?" · ":""}${esc(sel.name)} ${sel.above?"au-dessus de l'horizon":"sous l'horizon"}`+(!sel.above&&sel.next?` · lever ${fmtDay(sel.next.aos)} (max ${Math.round(sel.next.max_el)}°)`:"");
+  }
+  if(n.error) st=`<span style="color:var(--bad)">${esc(n.error)}</span>`;
+  else if(n.key){
+    if(n.above) st+=`${st?" · ":""}<b style="color:var(--ok)">🛰 ${esc(n.name)} en vue</b>`+(n.flip?" · mode retournement":"");
+    else if(n.prepos) st+=`${st?" · ":""}<b style="color:var(--warn)">Prépositionnement</b> pour le lever de ${esc(n.name)}`;
+    else st+=`${st?" · ":""}${esc(n.name)} sous l'horizon`+(n.next?` · lever ${fmtDay(n.next.aos)} (max ${Math.round(n.next.max_el)}°)`:"");
+  }
+  $("#tStatus").innerHTML=st;
+  $("#tNote").textContent=S.elevation?"":"Rotor azimut seulement : l'antenne suit l'azimut de la cible ; l'élévation est ignorée.";
+  $("#tleInfo").innerHTML=`${T.tle_count} satellites chargés`+(T.tle_age_h!=null?` · mis à jour il y a ${T.tle_age_h} h`:"")+(T.tle_error?` · <span style="color:var(--warn)">${esc(T.tle_error)}</span>`:"");
+  const cc=$("#tleCustom"); cc.innerHTML="";
+  (T.custom_tle||[]).forEach(nm=>{ const c=document.createElement("span"); c.className="chip"; c.innerHTML=`<span></span> <span class="x">✕</span>`; c.firstChild.textContent=nm;
+    c.querySelector(".x").onclick=()=>{ if(ask(`Retirer « ${nm} » ?`)) send({cmd:"tle_custom_del",name:nm}); }; cc.appendChild(c); });
+  const rr=$("#pRules"); rr.innerHTML="";
+  (T.settings.auto||[]).forEach((r,i)=>{ const c=document.createElement("span"); c.className="chip";
+    c.innerHTML=`🔁 <span></span> <small>&gt; ${r.min_el}°</small> <span class="x">✕</span>`; c.children[0].textContent=nameOf(r.target);
+    c.querySelector(".x").onclick=()=>send({cmd:"track_auto_del",index:i}); rr.appendChild(c); });
+  (T.settings.planned||[]).forEach((p,i)=>{ if(p.end<Date.now()/1000) return; const c=document.createElement("span"); c.className="chip";
+    c.innerHTML=`📅 <span></span> <small>${fmtDay(p.start)}–${fmtHM(p.end)}</small> <span class="x">✕</span>`; c.children[0].textContent=nameOf(p.target);
+    c.querySelector(".x").onclick=()=>send({cmd:"track_plan_del",index:i}); rr.appendChild(c); });
+  if(!rr.children.length) rr.innerHTML=`<span class="muted" style="font-size:13px">Aucun</span>`;
+  if(!trackFormInit && T.settings){ trackFormInit=true; const o=T.settings;
+    $("#oThr").value=o.threshold; $("#oPre").value=o.prepos_min; $("#oMin").value=o.min_el; $("#oAlt").value=o.altitude_m;
+    $("#oFlip").checked=!!o.flip; $("#oPark").checked=!!o.park_after; $("#oNotify").checked=!!o.notify; }
+  $("#oFlip").disabled=!T.flip_possible;
+  $("#oFlipTxt").textContent=T.flip_possible?"Évite un demi-tour du rotor quand un passage traverse la butée":"Indisponible : demande un rotor avec élévation 0–180°";
+  drawSky();
+}
+function nameOf(k){ const t=(S.targets||[]).find(x=>x.key===k); return t?t.name:(k==="moon"?"Lune":k==="sun"?"Soleil":k.replace(/^sat:/,"")); }
+function askPasses(){ const k=$("#tTarget").value; if(k && ws && ws.readyState===1) send({cmd:"track_passes",target:k,min_el:+$("#pMinEl").value||0}); }
+function renderPasses(m){
+  lastPasses=m; $("#pTitle").textContent=`· ${nameOf(m.target)}`;
+  const now=Date.now()/1000, tb=$("#pList"); tb.innerHTML="";
+  m.passes.forEach(p=>{ const tr=document.createElement("tr"); if(p.aos<=now&&now<=p.los) tr.className="now";
+    const dur=Math.round((p.los-p.aos)/60), day=new Date(p.aos*1000);
+    tr.innerHTML=`<td>${dayLbl(p.aos)}</td><td>${fmtHM(p.aos)}</td><td>${Math.round(p.max_el)}°</td><td>${fmtHM(p.los)}</td><td>${dur>=120?Math.floor(dur/60)+" h "+String(dur%60).padStart(2,"0"):dur+" min"}</td><td>${p.aos_az}° → ${p.los_az}°</td><td><button>Planifier</button></td>`;
+    tr.querySelector("button").onclick=()=>send({cmd:"track_plan",target:p.key,start:p.aos,end:p.los});
+    tb.appendChild(tr); });
+  if(!m.passes.length) tb.innerHTML=`<tr><td colspan="7" class="muted">Aucun passage dans les 48 prochaines heures</td></tr>`;
+  drawSky();
+}
+function drawSky(){
+  const P=(az,el)=>{ const r=(90-Math.max(0,Math.min(90,el)))/90*115, a=az*Math.PI/180; return [Math.sin(a)*r,-Math.cos(a)*r]; };
+  let s=`<circle r="115" fill="var(--panel2)" stroke="var(--line)"/>`;
+  [30,60].forEach(e=>{ const r=(90-e)/90*115; s+=`<circle r="${r}" fill="none" stroke="var(--line)" stroke-dasharray="3 3"/><text x="3" y="${-r+11}" font-size="8" fill="var(--muted)">${e}°</text>`; });
+  for(let a=0;a<360;a+=30){ const [x,y]=P(a,0); s+=`<line x1="0" y1="0" x2="${x}" y2="${y}" stroke="var(--line)" stroke-width=".5"/>`; }
+  [["N",0],["E",90],["S",180],[WEST(),270]].forEach(([l,a])=>{ const r=124, x=Math.sin(a*Math.PI/180)*r, y=-Math.cos(a*Math.PI/180)*r; s+=`<text x="${x}" y="${y+4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--text)">${l}</text>`; });
+  if(lastPasses && lastPasses.track && lastPasses.track.length && lastPasses.target===$("#tTarget").value){
+    const pts=lastPasses.track.filter(p=>p[1]>=-0.5).map(p=>P(p[0],p[1]).map(v=>v.toFixed(1)).join(",")).join(" ");
+    s+=`<polyline points="${pts}" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linejoin="round"/>`;
+    const a=lastPasses.track[0], [ax,ay]=P(a[0],Math.max(0,a[1])); s+=`<text x="${ax}" y="${ay-5}" font-size="8" text-anchor="middle" fill="var(--warn)">lever</text>`;
+  }
+  const T2=S.track||{}, n=(T2.now&&T2.now.key===$("#tTarget").value)?T2.now:(T2.sel||{});
+  if(n.key===$("#tTarget").value && n.el!=null && n.el>=0){ const [x,y]=P(n.az,n.el); s+=`<circle cx="${x}" cy="${y}" r="6" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/>`; }
+  if(S.az!=null){ const el=S.elevation&&S.el!=null?(S.el>90?180-S.el:S.el):0, az=S.elevation&&S.el>90?(S.az+180)%360:S.az%360; const [x,y]=P(az,el);
+    s+=`<path d="M${x},${y-6} L${x+6},${y} L${x},${y+6} L${x-6},${y} Z" fill="var(--ok)" stroke="#fff" stroke-width="1"/>`; }
+  s+=`<circle r="2" fill="var(--muted)"/>`;
+  $("#sky").innerHTML=s;
+}
+$("#tTarget").addEventListener("change",()=>{ send({cmd:"track_select",target:$("#tTarget").value}); askPasses(); });
+$("#tGo").onclick=()=>send({cmd:"track_select",target:$("#tTarget").value,start:true});
+$("#tStop").onclick=()=>send({cmd:"set_mode",mode:"manual"});
+$("#pRefresh").onclick=askPasses; $("#pMinEl").addEventListener("change",askPasses);
+$("#pAuto").onclick=()=>{ const k=$("#tTarget").value; if(ask(`Suivre automatiquement tous les passages de ${nameOf(k)} au-dessus de ${+$("#pMinEl").value||0}° (en mode Suivi) ?`)) send({cmd:"track_auto_add",target:k,min_el:+$("#pMinEl").value||0}); };
+$("#oSave").onclick=()=>send({cmd:"track_settings",threshold:+$("#oThr").value,prepos_min:+$("#oPre").value,min_el:+$("#oMin").value,altitude_m:+$("#oAlt").value,
+  flip:$("#oFlip").checked,park_after:$("#oPark").checked,notify:$("#oNotify").checked});
+$("#tleRefresh").onclick=()=>send({cmd:"tle_refresh"});
+$("#tleAdd").onclick=()=>{ send({cmd:"tle_custom_add",text:$("#tleText").value}); $("#tleText").value=""; };
+setInterval(()=>{ if(route==="suivi") askPasses(); },60000);
+
+/* ---------- Tableau de bord à modules (disposition par utilisateur et par appareil) ---------- */
+let PREFS={lang:LANG,layout:{}};
+const MODS={
+  compass:{name:"Boussole et commandes",fixed:true},
+  control:{name:"Contrôle (En opération et résumé)"},
+  pointer:{name:"Pointer vers un grid, un indicatif ou une ville"},
+  presets:{name:"Préréglages"},
+  wsjtx:{name:"Dernier DX WSJT-X"},
+  passes:{name:"Prochains passages satellites"},
+  traffic:{name:"Trafic",variants:{mini:"Dernière ligne",compact:"5 à 10 lignes",full:"Complet (défilement)"}},
+  wind:{name:"Vent"}, sched:{name:"Horaire en cours"}, ctrl:{name:"État du contrôleur"},
+  system:{name:"Raspberry Pi (arrêt, redémarrage)"},
+};
+const SIZES={full:"Pleine largeur",half:"Demi-largeur",third:"Tiers"};
+const DEFAULT_LAYOUT={
+  desktop:[{id:"control",size:"half",on:true},{id:"pointer",size:"half",on:true},{id:"presets",size:"half",on:true},
+    {id:"wsjtx",size:"half",on:true},{id:"passes",size:"half",on:false},{id:"traffic",size:"full",variant:"compact",on:true},
+    {id:"wind",size:"third",on:false},{id:"sched",size:"third",on:false},{id:"ctrl",size:"third",on:false},{id:"system",size:"third",on:false}],
+  mobile:[{id:"control",size:"full",on:true},{id:"pointer",size:"full",on:true},{id:"presets",size:"full",on:true},
+    {id:"traffic",size:"full",variant:"mini",on:true},{id:"wsjtx",size:"full",on:false},{id:"passes",size:"full",on:false},
+    {id:"wind",size:"full",on:false},{id:"sched",size:"full",on:false},{id:"ctrl",size:"full",on:false},{id:"system",size:"full",on:false}],
+};
+let trafVariant="compact";
+function device(){ return matchMedia("(max-width:760px)").matches?"mobile":"desktop"; }
+function curLayout(dev){
+  dev=dev||device(); const base=JSON.parse(JSON.stringify(DEFAULT_LAYOUT[dev])), saved=(PREFS.layout||{})[dev];
+  if(!saved||!saved.length) return base;
+  const out=saved.filter(m=>MODS[m.id]&&!MODS[m.id].fixed).map(m=>({...m})), ids=new Set(out.map(m=>m.id));
+  base.forEach(m=>{ if(!ids.has(m.id)) out.push({...m,on:false}); });
+  return out;
+}
+function applyLayout(){
+  const dash=$("#dash"), bar=dash.querySelector(".dashbar"), comp=dash.querySelector('[data-mod="compass"]');
+  dash.appendChild(bar); dash.appendChild(comp);
+  curLayout().forEach(m=>{ const el=dash.querySelector(`[data-mod="${m.id}"]`); if(!el) return;
+    el.className=`card m-${SIZES[m.size]?m.size:"half"}`+(m.on?"":" hidden"); dash.appendChild(el);
+    if(m.id==="traffic"){ trafVariant=MODS.traffic.variants[m.variant]?m.variant:"compact"; $("#miniCon").className="minicon v-"+trafVariant; }
+  });
+  const on=id=>curLayout().some(m=>m.id===id&&m.on);
+  if(on("passes")&&!lastSat) askSatPasses();
+  renderMiniCon(); renderMini();
+}
+let lastDev=device();
+window.addEventListener("resize",()=>{ const d=device(); if(d!==lastDev){ lastDev=d; applyLayout(); } });
+function onPrefs(p){
+  PREFS=p||PREFS; $("#uLang").value=PREFS.lang||"fr";
+  setLang(PREFS.lang||"fr"); applyLayout();
+}
+let editLayout=null;
+function openCustom(){
+  editLayout=curLayout(); $("#customFor").textContent=TR(device()==="mobile"?"Disposition pour le cellulaire (petits écrans)":"Disposition pour l'ordinateur (grands écrans)");
+  drawCustom(); $("#customDlg").showModal();
+}
+function drawCustom(){
+  const box=$("#modList"); box.innerHTML="";
+  box.insertAdjacentHTML("beforeend",`<div class="modrow fixed"><input type="checkbox" checked disabled><span class="nm">${esc(TR(MODS.compass.name))}</span></div>`);
+  editLayout.forEach((m,i)=>{ const M=MODS[m.id], d=document.createElement("div"); d.className="modrow";
+    d.innerHTML=`<input type="checkbox" ${m.on?"checked":""}><span class="nm"></span>`+
+      (M.variants?`<select class="v">${Object.entries(M.variants).map(([k,v])=>`<option value="${k}" ${m.variant===k?"selected":""}>${esc(TR(v))}</option>`).join("")}</select>`:"")+
+      `<select class="s">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}" ${m.size===k?"selected":""}>${esc(TR(v))}</option>`).join("")}</select>`+
+      `<button title="Monter">↑</button><button title="Descendre">↓</button>`;
+    d.querySelector(".nm").textContent=TR(M.name);
+    d.querySelector("input").onchange=e=>m.on=e.target.checked;
+    d.querySelector(".s").onchange=e=>m.size=e.target.value;
+    if(M.variants) d.querySelector(".v").onchange=e=>m.variant=e.target.value;
+    const [up,dn]=d.querySelectorAll("button");
+    up.onclick=()=>{ if(i>0){ [editLayout[i-1],editLayout[i]]=[editLayout[i],editLayout[i-1]]; drawCustom(); } };
+    dn.onclick=()=>{ if(i<editLayout.length-1){ [editLayout[i+1],editLayout[i]]=[editLayout[i],editLayout[i+1]]; drawCustom(); } };
+    box.appendChild(d); });
+}
+$("#customBtn").onclick=openCustom;
+$("#customCancel").onclick=()=>$("#customDlg").close();
+$("#customSave").onclick=()=>{ const dev=device(); PREFS.layout=PREFS.layout||{}; PREFS.layout[dev]=editLayout;
+  send({cmd:"prefs_save",device:dev,layout:editLayout}); applyLayout(); $("#customDlg").close(); };
+$("#customReset").onclick=()=>{ const dev=device(); if(PREFS.layout) delete PREFS.layout[dev]; send({cmd:"prefs_save",reset:dev}); applyLayout(); $("#customDlg").close(); };
+
+/* Mini-console du tableau de bord */
+let miniPending=false;
+function renderMiniCon(){
+  if(miniPending) return; miniPending=true;
+  requestAnimationFrame(()=>{ miniPending=false; const con=$("#miniCon"); if(!con) return;
+    const n=trafVariant==="mini"?1:(trafVariant==="compact"?8:300);
+    const atBottom=con.scrollHeight-con.scrollTop-con.clientHeight<30;
+    con.innerHTML=""; const f=document.createDocumentFragment();
+    logs.filter(visible).slice(-n).forEach(e=>f.appendChild(fmtEntry(e))); con.appendChild(f);
+    if(!f.childNodes.length && !con.childNodes.length) con.innerHTML=`<span class="muted">—</span>`;
+    if(trafVariant==="full" && atBottom) con.scrollTop=con.scrollHeight; });
+}
+
+/* Modules : vent, horaire, contrôleur, passages */
+function renderMini(){
+  if(!S.version) return;
+  const w=S.weather||{}, cfg=S.wind||{};
+  $("#mwS b").textContent=w.speed??"—"; $("#mwG b").textContent=w.gust??"—"; $("#mwD b").textContent=w.dir!=null?w.dir+"°":"—";
+  $("#mwS").classList.toggle("over",w.speed!=null&&w.speed>cfg.max_speed); $("#mwG").classList.toggle("over",w.gust!=null&&w.gust>cfg.max_gust);
+  $("#mwSt").innerHTML=!cfg.enabled?`<span style="color:var(--warn)">Protection désactivée</span>`:(S.wind_locked?`<b style="color:var(--bad)">💨 VERROU VENT ACTIF</b>`:`<span style="color:var(--ok)">✔ Rotor libre</span>`);
+  const sc=S.sched||{};
+  $("#mSched").innerHTML=(S.mode!=="schedule"?`<span style="color:var(--warn)">Mode Horaire inactif</span><br>`:"")+
+    (sc.active?`▶ <b>${esc(sc.active)}</b> — jusqu'à ${sc.until}`:(sc.next?`Prochaine : ${esc(sc.next)} · ${sc.next_at}`:`<span class="muted">Aucune plage</span>`));
+  const r=S.rotor||{}, d=(S.drivers||[]).find(x=>x.key===r.driver), L=S.live||{};
+  const rows=[["État",S.connected?`<span style="color:var(--ok)">✔ Connecté</span>`:`<span style="color:var(--bad)">✖ Non connecté</span>`],
+    ["Modèle",d?esc(d.label):"—"]];
+  if(S.profile) rows.push(["Profil",esc(S.profile)]);
+  if(r.serial_port && drvKind(r.driver)==="serial") rows.push(["Port",esc(r.serial_port.replace("/dev/serial/by-id/",""))]);
+  if(DIY.includes(r.driver)) rows.push(["Calibration",L.calibrated?"✔":"⚠"]);
+  $("#mCtrl").innerHTML=rows.map(x=>`<span>${x[0]}</span><div>${x[1]}</div>`).join("");
+  renderMiniPasses();
+}
+function renderMiniPasses(){
+  const box=$("#miniPasses"); if(!box) return;
+  if(!lastSat){ box.innerHTML=`<span class="muted" style="font-size:13px">Calcul…</span>`; return; }
+  const now=Date.now()/1000, list=lastSat.passes.filter(p=>p.los>now).slice(0,6);
+  if(!list.length){ box.innerHTML=`<span class="muted" style="font-size:13px">Aucun passage dans les bandes choisies</span>`; return; }
+  box.innerHTML=`<div class="tblwrap"><table class="passes"><tbody>${list.map((p,i)=>`<tr class="${p.aos<=now?"now":""}"><td>${p.aos<=now?"▶":fmtDay(p.aos)}</td><td><a class="satlink" data-i="${i}"></a></td><td>${Math.round(p.max_el)}°</td><td><button data-i="${i}">Suivre</button></td></tr>`).join("")}</tbody></table></div>`;
+  box.querySelectorAll("a.satlink").forEach(a=>{ const p=list[+a.dataset.i]; a.textContent=p.display; a.onclick=()=>send({cmd:"sat_info",key:p.key}); });
+  box.querySelectorAll("button").forEach(b=>{ const p=list[+b.dataset.i]; b.onclick=()=>send({cmd:"track_select",target:p.key,start:true}); });
+}
+
+/* ---------- Passages satellites ---------- */
+let lastSat=null, satFormInit=false, bandsSig="";
+function askSatPasses(force){ if(ws&&ws.readyState===1&&S.grid) send({cmd:"sat_passes",force:!!force}); }
+function renderSatSettings(){
+  const L=S.satlist; if(!L) return; const c=L.settings;
+  const sig=L.bands.map(b=>b.key).join()+"|"+c.bands.join();
+  if(sig!==bandsSig){ bandsSig=sig;
+    $("#spBands").innerHTML=L.bands.map(b=>`<label><input type="checkbox" value="${b.key}" ${c.bands.includes(b.key)?"checked":""}><span>${esc(b.name)}</span></label>`).join("");
+    $("#spBands").querySelectorAll("input").forEach(i=>i.onchange=satSave); }
+  if(!satFormInit){ satFormInit=true;
+    $("#spHours").value=String(c.hours); $("#spMinEl").value=c.min_el; $("#spUp").checked=!!c.need_uplink; $("#spNogo").checked=!!c.hide_nogo;
+    const a=c.alerts||{}; $("#saOn").checked=!!a.enabled; $("#saMin").value=a.minutes; $("#saEl").value=a.min_el; $("#saMail").checked=!!a.email; $("#saHa").checked=!!a.ha; }
+  $("#snInfo").innerHTML=(L.satnogs_count?`Fréquences SatNOGS : ${L.satnogs_count} satellites`+(L.age_h!=null?` · mises à jour il y a ${L.age_h} h`:""):"Fréquences SatNOGS pas encore téléchargées")+
+    (L.error?` · <span style="color:var(--warn)">${esc(L.error)}</span>`:"");
+}
+function satPayload(){ return {bands:[...$("#spBands").querySelectorAll("input:checked")].map(i=>i.value),hours:+$("#spHours").value,
+  min_el:+$("#spMinEl").value||0,need_uplink:$("#spUp").checked,hide_nogo:$("#spNogo").checked}; }
+function satSave(){ $("#spInfo").textContent=TR("Calcul…"); send({cmd:"sat_settings",...satPayload()}); }
+["#spHours","#spMinEl","#spUp","#spNogo"].forEach(id=>$(id).addEventListener("change",satSave));
+$("#spRefresh").onclick=()=>{ $("#spInfo").textContent=TR("Calcul…"); askSatPasses(true); };
+$("#snRefresh").onclick=()=>send({cmd:"sat_refresh"});
+$("#saSave").onclick=()=>send({cmd:"sat_settings",...satPayload(),alerts:{enabled:$("#saOn").checked,minutes:+$("#saMin").value||10,
+  min_el:+$("#saEl").value||0,email:$("#saMail").checked,ha:$("#saHa").checked}});
+function fmtDur(s){ const m=Math.round(s/60); return m>=120?Math.floor(m/60)+" h "+String(m%60).padStart(2,"0"):m+" min"; }
+function dayLbl(ts){ const d=new Date(ts*1000); return d.toDateString()===new Date().toDateString()?TR("auj."):J(d.getDay())+" "+d.getDate(); }
+function onSatPasses(m){
+  lastSat=m; renderMiniPasses();
+  const now=Date.now()/1000, tb=$("#spList"); tb.innerHTML="";
+  const show=m.passes.slice(0,150);
+  show.forEach((p,i)=>{ const tr=document.createElement("tr");
+    tr.className=(p.aos<=now&&now<=p.los?"now":(p.aos-now<1800?"soon":""))+(p.nogo?" nogo":"");
+    tr.innerHTML=`<td>${dayLbl(p.aos)}</td><td>${fmtHM(p.aos)}</td><td><a class="satlink"></a>${p.nogo?' <span title="Passe dans une zone interdite">⛔</span>':""}</td><td>${Math.round(p.max_el)}°</td><td>${fmtHM(p.los)}</td><td>${fmtDur(p.los-p.aos)}</td><td>${p.aos_az}° → ${p.los_az}°</td><td class="fq"></td><td><button>Suivre</button> <button>Planifier</button></td>`;
+    tr.querySelector("a").textContent=p.display; tr.querySelector("a").onclick=()=>send({cmd:"sat_info",key:p.key});
+    tr.querySelector(".fq").textContent=p.freq+(p.nfreq>1?` (+${p.nfreq-1})`:"");
+    const [bT,bP]=tr.querySelectorAll("button");
+    bT.onclick=()=>send({cmd:"track_select",target:p.key,start:true});
+    bP.onclick=()=>send({cmd:"track_plan",target:p.key,start:p.aos,end:p.los});
+    tb.appendChild(tr); });
+  if(!show.length) tb.innerHTML=`<tr><td colspan="9" class="muted">Aucun passage — coche d'autres bandes ou baisse l'élévation minimale</td></tr>`;
+  let info=`${m.passes.length} passages`+(m.computed?` · calculés à ${fmtHM(m.computed)}`:"");
+  if(m.no_data) info+=` · <span style="color:var(--warn)">fréquences SatNOGS absentes : tous les satellites sont listés</span>`;
+  if(m.error) info+=` · <span style="color:var(--bad)">${esc(m.error)}</span>`;
+  if(!S.elevation) info+=` · rotor azimut seulement`;
+  $("#spInfo").innerHTML=info;
+}
+setInterval(()=>{ if(route==="passages"||(route==="op"&&curLayout().some(m=>m.id==="passes"&&m.on))) askSatPasses(); },300000);
+let satKey=null;
+function onSatInfo(m){
+  satKey=m.key; $("#satTitle").textContent=m.name;
+  const links=[]; if(m.website) links.push(`<a href="${esc(m.website)}" target="_blank" rel="noopener" style="color:var(--accent)">🌐 Page web du groupe</a>`);
+  if(m.satnogs_url) links.push(`<a href="${esc(m.satnogs_url)}" target="_blank" rel="noopener" style="color:var(--accent)">📡 Fiche SatNOGS</a>`);
+  let h=`<div class="kv"><span>NORAD</span><div>${m.norad??"—"}</div>`+(m.other_names?`<span>Autres noms</span><div>${esc(m.other_names)}</div>`:"")+
+    (m.status?`<span>État</span><div>${esc(m.status)}</div>`:"")+`</div>`;
+  if(links.length) h+=`<div class="row" style="gap:16px">${links.join("")}</div>`;
+  if(!m.has_data) h+=`<p class="muted" style="font-size:13px">Fréquences SatNOGS pas encore téléchargées (Passages › Mettre à jour).</p>`;
+  else if(!m.transmitters.length) h+=`<p class="muted" style="font-size:13px">Aucun émetteur radioamateur actif connu.</p>`;
+  else h+=`<div class="tblwrap" style="margin-top:10px"><table class="txt"><thead><tr><th>Descente</th><th>Montée</th><th>Mode</th><th>Tonalité</th><th>Description</th></tr></thead><tbody>`+
+    m.transmitters.map(t=>`<tr class="${t.in_bands?"":"out"}"><td>${t.down_mhz?t.down_mhz+" MHz":"—"}</td><td>${t.up_mhz?t.up_mhz+" MHz":"—"}${t.invert?" (inv.)":""}</td><td>${esc(t.mode||"")}${t.up_mode&&t.up_mode!==t.mode?" / "+esc(t.up_mode):""}</td><td>${t.ctcss?t.ctcss+" Hz":""}</td><td>${esc(t.desc)}</td></tr>`).join("")+`</tbody></table></div>
+    <p class="muted" style="font-size:12px">Les lignes pâles sont hors de tes bandes. Source : SatNOGS (vérifie toujours avant d'émettre).</p>`;
+  $("#satBody").innerHTML=h; if(!$("#satDlg").open) $("#satDlg").showModal();
+}
+$("#satClose").onclick=()=>$("#satDlg").close();
+$("#satTrack").onclick=()=>{ if(satKey) send({cmd:"track_select",target:satKey,start:true}); $("#satDlg").close(); };
+
+/* ---------- Changer de contrôleur : assistant et profils ---------- */
+let wzPort=null, wzPorts=[];
+$("#wzScan").onclick=()=>{ $("#wzPorts").innerHTML=`<span class="muted" style="font-size:13px">Recherche…</span>`; send({cmd:"ctrl_scan"}); };
+function onCtrlPorts(m){
+  wzPorts=m.ports.slice(); if(m.ads1115!=null) wzPorts.push({path:"gpio",dev:"I2C 0x"+m.ads1115.toString(16),name:"Montage GPIO du Raspberry Pi (ADS1115)",ads:m.ads1115});
+  wzPorts.push({path:"tcp",dev:"rotctld",name:"Hamlib rotctld (réseau)"});
+  const box=$("#wzPorts"); box.innerHTML="";
+  if(!m.ports.length) box.insertAdjacentHTML("beforeend",`<p style="color:var(--warn);font-size:13px">Aucun port USB série détecté. Vérifie le câble (un câble de charge seulement ne transmet pas de données).</p>`);
+  wzPorts.forEach(p=>{ const d=document.createElement("div"); d.className="port";
+    d.innerHTML=`<span>🔌</span><span style="flex:1;min-width:0"><b></b><br><small></small></span>`;
+    d.querySelector("b").textContent=p.name; d.querySelector("small").textContent=p.dev+(p.path===m.current||p.rotor_link?" · "+TR("actuel"):"");
+    d.onclick=()=>{ wzPort=p; box.querySelectorAll(".port").forEach(x=>x.classList.toggle("on",x===d)); wzSelect(); };
+    box.appendChild(d); });
+}
+function wzFillDrivers(){ $("#wzDriver").innerHTML=(S.drivers||[]).map(d=>`<option value="${d.key}">${esc(TR(d.label))}</option>`).join(""); }
+function wzSelect(){
+  $("#wzResult").innerHTML=""; wzFillDrivers();
+  const serial=!["gpio","tcp"].includes(wzPort.path);
+  $("#wzProbeRow").classList.toggle("hidden",!serial);
+  $("#wzApply").classList.remove("hidden"); $("#wzTest").classList.add("hidden");
+  $("#wzDriver").value=wzPort.path==="gpio"?"gpio":(wzPort.path==="tcp"?"hamlib":((S.rotor||{}).driver||"gs232b"));
+  if(!serial || ["gpio","hamlib"].includes($("#wzDriver").value)===false) {}
+  $("#wzBaud").value=""; $("#wzEl").value=S.elevation?"1":"0";
+}
+function probe(full){ if(!wzPort) return; $("#wzResult").innerHTML=""; $("#wzProg").classList.remove("hidden"); $("#wzProg").value=0;
+  $("#wzProgTxt").textContent=TR("Le rotor est arrêté pendant la détection…"); send({cmd:"ctrl_probe",port:wzPort.path,full}); }
+$("#wzProbe").onclick=()=>probe(false); $("#wzProbeAll").onclick=()=>probe(true);
+function onCtrlProgress(m){ $("#wzProg").max=m.n; $("#wzProg").value=m.i; $("#wzProgTxt").textContent=`${m.i}/${m.n} · ${TR(m.label)} @ ${m.baud}`; }
+function onCtrlFound(m){
+  $("#wzProg").classList.add("hidden"); $("#wzProgTxt").textContent="";
+  if(m.found.length){ const f=m.found[0];
+    $("#wzResult").innerHTML=`<div class="found">✔ <b></b> @ ${f.baud} bauds${f.az!=null?` · position lue : ${f.az}°`:""}</div>`;
+    $("#wzResult b").textContent=TR(f.label); wzFillDrivers(); $("#wzDriver").value=f.driver; $("#wzBaud").value=f.baud;
+    if(f.el!=null) $("#wzEl").value="1";
+  } else $("#wzResult").innerHTML=`<div class="nf">⚠ Aucun contrôleur reconnu. Essaie « Toutes les vitesses », vérifie que le contrôleur est allumé, ou choisis le modèle à la main ci-dessous.</div>`;
+}
+$("#wzGo").onclick=()=>{
+  if(!wzPort) return; const drv=$("#wzDriver").value;
+  if(!ask("Utiliser ce contrôleur ? RotorWeb va se reconnecter avec les nouveaux réglages.")) return;
+  const o={cmd:"ctrl_apply",driver:drv,baud:+$("#wzBaud").value||0,elevation:$("#wzEl").value==="1",
+    reset_cal:!$("#wzKeepCal").checked,reset_course:!$("#wzKeepCourse").checked};
+  if(!["gpio","tcp"].includes(wzPort.path)) o.serial_port=wzPort.path;
+  if(wzPort.ads!=null) o.ads_address=wzPort.ads;
+  send(o); $("#wzTest").classList.remove("hidden");
+};
+$("#wzStop").onclick=()=>send({cmd:"stop"});
+function renderWizLive(){ const el=$("#wzLive"); if(!el) return;
+  el.innerHTML=(S.connected?`<span style="color:var(--ok)">✔ Contrôleur connecté</span>`:`<span style="color:var(--warn)">Connexion…</span>${S.conn_error?" — "+esc(S.conn_error):""}`)+
+    ` · position : <b>${S.az!=null?S.az+"°":"—"}</b>`+(!S.operating?` · <span style="color:var(--warn)">hors opération</span>`:""); }
+function renderProfiles(){
+  const box=$("#profList"); if(!box) return; box.innerHTML="";
+  (S.profiles||[]).forEach(n=>{ const d=document.createElement("div"); d.className="sched"+(n===S.profile?" active":"");
+    d.innerHTML=`<div class="info"><b></b><div></div></div><button>Charger</button><button title="Supprimer">✕</button>`;
+    d.querySelector("b").textContent=n; d.querySelector(".info div").textContent=TR(n===S.profile?"Profil actif":(n.startsWith("↩")?"Configuration d'avant le dernier changement":""));
+    const [bL,bD]=d.querySelectorAll("button");
+    bL.onclick=()=>{ if(ask(`Charger le profil « ${n} » ? RotorWeb va se reconnecter.`)) send({cmd:"profile_load",name:n}); };
+    bD.onclick=()=>{ if(ask(`Supprimer le profil « ${n} » ?`)) send({cmd:"profile_del",name:n}); };
+    box.appendChild(d); });
+  if(!(S.profiles||[]).length) box.innerHTML=`<p class="muted" style="font-size:13px">Aucun profil</p>`;
+  renderWizLive();
+}
+$("#profSave").onclick=()=>{ const n=$("#profName").value.trim(); if(!n){toast("Donne un nom au profil","warn");return;} send({cmd:"profile_save",name:n}); $("#profName").value=""; };
+
+/* ---------- Système : arrêt / redémarrage du Raspberry Pi ---------- */
+const PWR={restart:["Redémarrer RotorWeb ?","La page se reconnectera dans quelques secondes. Le rotor est arrêté pendant le redémarrage."],
+  reboot:["Redémarrer le Raspberry Pi ?","RotorWeb sera indisponible environ une minute."],
+  poweroff:["Éteindre le Raspberry Pi ?","Pour le rallumer, il faudra débrancher et rebrancher son alimentation. RotorWeb ne sera plus accessible à distance."]};
+let pwrAction=null;
+document.querySelectorAll("[data-pwr]").forEach(b=>b.onclick=()=>{ pwrAction=b.dataset.pwr; const [t,x]=PWR[pwrAction];
+  $("#pwrTitle").textContent=TR(t); $("#pwrTxt").textContent=TR(x)+(pwrAction!=="restart"&&S.power_park&&S.operating?" "+TR("L'antenne ira d'abord au repos."):"");
+  $("#pwrDlg").showModal(); });
+$("#pwrNo").onclick=()=>$("#pwrDlg").close();
+$("#pwrYes").onclick=()=>{ send({cmd:"system",action:pwrAction}); $("#pwrDlg").close(); };
+$("#pwPark").onchange=e=>send({cmd:"power_park",value:e.target.checked});
+function renderSystem(){ $("#pwPark").checked=!!S.power_park;
+  if(S.power_ok===false) $("#pwNote").innerHTML=`<span style="color:var(--warn)">Commande système non installée : relance <code>sudo ./update.sh</code> sur le Raspberry Pi.</span>`; }
+function onSystem(m){ const t={poweroff:"Le Raspberry Pi s'éteint…",reboot:"Le Raspberry Pi redémarre…",restart:"RotorWeb redémarre…"}[m.action];
+  if(t){ toast(t,"warn"); $("#bannerTxt").textContent=TR(t); } }
+
+/* ---------- Réglages : recherche d'indicatifs, langue ---------- */
+$("#lkSave").onclick=()=>{ send({cmd:"lookup_save",source:$("#lkSource").value,hamqth_user:$("#lkHU").value,hamqth_pass:$("#lkHP").value,
+  qrz_user:$("#lkQU").value,qrz_pass:$("#lkQP").value}); $("#lkHP").value=$("#lkQP").value=""; };
+$("#uLang").onchange=e=>{ PREFS.lang=e.target.value; send({cmd:"prefs_save",lang:e.target.value}); setLang(e.target.value); };
+
+/* ---------- Mises à jour en ligne ---------- */
+let updInProgress=false, notesOpen=false, knownVersion=null;
+function updNotes(u){ const n=u.notes||{}; return (LANG==="en"?(n.en||n.fr):(n.fr||n.en))||""; }
+function renderUpdate(){
+  const u=S.update; if(!u) return;
+  $("#upCur").textContent="v"+u.current; $("#upLatest").textContent=u.latest?("v"+u.latest+(u.date?` (${u.date})`:"")):"—";
+  $("#upChecked").textContent=u.last_check?fmtDay(u.last_check):"—";
+  let st="";
+  if(u.checking) st=`<span class="muted">Vérification…</span>`;
+  else if(u.available) st=`<b style="color:var(--accent)">⬆ Nouvelle version disponible : v${esc(u.latest)}</b>`;
+  else if(u.latest) st=`<span style="color:var(--ok)">✔ RotorWeb est à jour</span>`;
+  if(u.error && !u.busy) st+=`${st?"<br>":""}<span style="color:var(--warn)">${esc(u.error)}</span>`;
+  if(!u.can_install) st+=`${st?"<br>":""}<span style="color:var(--warn)">Commande système non installée : relance <code>sudo ./update.sh</code> une fois à la main.</span>`;
+  if(u.result && u.result.ok===false) st+=`${st?"<br>":""}<span style="color:var(--bad)">⚠ La dernière mise à jour (v${esc(u.result.to||"?")}) n'a pas démarré : retour automatique à v${esc(u.current)}.</span>`;
+  else if(u.result && u.result.ok) st+=`${st?"<br>":""}<span style="color:var(--ok)">✔ Mise à jour réussie : v${esc(u.result.from||"?")} → v${esc(u.result.to||u.current)}</span>`;
+  $("#upStatus").innerHTML=st;
+  const notes=updNotes(u);
+  $("#upNotes").classList.toggle("hidden",!(u.available&&notes)); $("#upNotes").textContent=notes;
+  $("#upGo").classList.toggle("hidden",!u.available); $("#upGo").disabled=!!u.busy||!u.can_install;
+  $("#upCheck").disabled=!!u.checking;
+  $("#updBanner").classList.toggle("hidden",!u.available||updInProgress);
+  $("#updBTxt").textContent=TR(`Nouvelle version disponible : v${u.latest}`);
+  if(document.activeElement!==$("#upRepo")) $("#upRepo").value=u.repo||"";
+  if(document.activeElement!==$("#upUrl")) $("#upUrl").value=u.url||"";
+  // progression
+  if(u.busy || (updInProgress && ["download","verify","park","install"].includes(u.step))) showUpdOverlay(u.step);
+  if(updInProgress && !u.busy && (u.step==="error"||u.step==="simulated")){ hideUpdOverlay(); if(u.step==="simulated") toast("Simulation : la version a été téléchargée et vérifiée, mais pas installée","ok"); }
+  if(u.result && u.result.ok===false && updInProgress){ hideUpdOverlay(); }
+}
+function showUpdOverlay(step){
+  updInProgress=true; $("#updOverlay").classList.remove("hidden"); $("#updBanner").classList.add("hidden");
+  const order=["download","verify","park","install","reconnect"], i=order.indexOf(step);
+  document.querySelectorAll("#updOverlay li").forEach((li,k)=>{ li.className=k<i?"done":(k===i?"on":""); });
+  $("#uoTitle").textContent=TR(S.update&&S.update.latest?`Mise à jour vers v${S.update.latest}`:"Mise à jour");
+}
+function hideUpdOverlay(){ updInProgress=false; $("#updOverlay").classList.add("hidden"); }
+function askInstall(){
+  const u=S.update||{}; if(!u.available) return;
+  if(!ask(`Installer RotorWeb v${u.latest} ?\nL'antenne ira au repos et RotorWeb sera indisponible 1 à 3 minutes.`)) return;
+  updInProgress=true; showUpdOverlay("download"); send({cmd:"update_install"});
+}
+$("#upCheck").onclick=()=>send({cmd:"update_check"});
+$("#upGo").onclick=askInstall; $("#updBGo").onclick=askInstall;
+$("#updBSee").onclick=()=>go("reglages/systeme");
+$("#upSrcSave").onclick=()=>send({cmd:"update_source",repo:$("#upRepo").value,url:$("#upUrl").value});
+
+/* ---------- Sauvegarde / restauration ---------- */
+$("#bkGo").onclick=async()=>{
+  const p=$("#bkPw").value; if(p.length<6){toast("Mot de passe de sauvegarde trop court (6 caractères minimum)","warn");return;}
+  if(p!==$("#bkPw2").value){toast("Les deux mots de passe ne correspondent pas","warn");return;}
+  const fd=new FormData(); fd.append("password",p);
+  try{
+    const r=await fetch("/api/backup",{method:"POST",body:fd});
+    if(!r.ok){ const j=await r.json().catch(()=>({})); toast(j.error||"Échec de la sauvegarde","error"); return; }
+    const blob=await r.blob(), cd=r.headers.get("Content-Disposition")||"", m=cd.match(/filename="([^"]+)"/);
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=m?m[1]:"rotorweb.rwbackup"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000); $("#bkPw").value=$("#bkPw2").value="";
+    toast("Sauvegarde téléchargée — garde-la avec son mot de passe","ok");
+  }catch(e){ toast("Échec de la sauvegarde","error"); }
+};
+async function restoreReq(action){
+  const f=$("#rsFile").files[0]; if(!f){toast("Choisis un fichier .rwbackup","warn");return null;}
+  const fd=new FormData(); fd.append("file",f); fd.append("password",$("#rsPw").value); fd.append("action",action);
+  const r=await fetch("/api/restore",{method:"POST",body:fd}); const j=await r.json().catch(()=>({ok:false,error:"Réponse invalide"}));
+  if(!j.ok){ toast(j.error||"Échec","error"); return null; } return j;
+}
+$("#rsCheck").onclick=async()=>{
+  $("#rsSum").innerHTML=""; $("#rsGoRow").classList.add("hidden");
+  const j=await restoreReq("preview"); if(!j) return; const s=j.summary;
+  const d=(S.drivers||[]).find(x=>x.key===s.driver);
+  const rows=[["Créée le",esc(s.created)],["Version",`v${esc(s.rotorweb_version)}`],["Station",`${esc(s.callsign||"—")} · ${esc(s.grid||"—")}`],
+    ["Contrôleur",esc(d?d.label:s.driver)+(s.elevation?" · "+TR("élévation"):"")+(s.calibrated?" · "+TR("calibré"):"")],
+    ["Comptes",esc(s.users.join(", ")||"—")],["Horaires",s.schedules],["Préréglages",s.presets],["Profils",s.profiles],
+    ["Courriels",s.email?"✔":"—"],["Home Assistant",s.mqtt?"✔":"—"],["Port web",s.web_port]];
+  $("#rsSum").innerHTML=`<div class="kv" style="margin-top:10px">${rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join("")}</div>`;
+  $("#rsGoRow").classList.remove("hidden");
+};
+$("#rsGo").onclick=async()=>{
+  if(!ask("Remplacer TOUS les réglages actuels par cette sauvegarde ? RotorWeb va redémarrer.")) return;
+  const j=await restoreReq("apply"); if(!j) return;
+  toast("Réglages restaurés — RotorWeb redémarre…","ok"); $("#rsGoRow").classList.add("hidden");
+  setTimeout(()=>location.reload(),8000);
+};
+
+/* ---------- Résumé (page Opération) et index des réglages ---------- */
+function renderOpSummary(){
+  const sc=S.sched||{}, w=S.weather||{}, wx=S.wsjtx||{}, rows=[];
+  rows.push(["Mode", modeTxt()]);
+  if(sc.active) rows.push(["Horaire", `${esc(sc.active)} → ${sc.until}`]);
+  else if(sc.next) rows.push(["Prochaine plage", `${esc(sc.next)} · ${sc.next_at}`]);
+  if(w.speed!=null) rows.push(["Vent", `${w.speed} km/h · rafales ${w.gust} km/h`+(S.wind_locked?` <b style="color:var(--bad)">· VERROU</b>`:"")]);
+  const tn=(S.track||{}).now||{};
+  if(S.mode==="track"||tn.name) if(tn.name) rows.push(["Suivi", `${esc(tn.name)} · az ${Math.round(tn.az??0)}° él ${Math.round(tn.el??0)}°`+(tn.above?"":" · sous l'horizon")]);
+  if(wx.dx_call) rows.push(["Station DX", `${esc(wx.dx_call)} ${esc(wx.dx_grid||"")}`+(wx.bearing!=null?` · ${wx.bearing}°`:"")]);
+  $("#opSummary").innerHTML=rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join("");
+}
+function renderSetIndex(){
+  const r=S.rotor||{}, d=(S.drivers||[]).find(x=>x.key===r.driver);
+  if(d) $("#setCtrlSub").textContent=d.label;
+  const L=S.live||{};
+  $("#setCalSub").textContent=DIY.includes(r.driver)?(L.calibrated?"✔ Calibré":"⚠ Calibration requise"):
+    (["gs232a","gs232b"].includes(r.driver)?"Commandes O / F du contrôleur, décalage":"Décalage de l'antenne");
+  const e=S.email||{}; $("#setMailSub").textContent=e.enabled?`Actifs → ${e.to||"?"}`:"Désactivés";
+  const m=S.mqtt||{}; $("#setHaSub").textContent=!m.enabled?"Désactivé":(m.connected?"✔ Connecté":"Connexion en cours…");
+  if(me) $("#setAccSub").textContent=`Connecté : ${me} · ${LANG==="en"?"English":"Français"} · Déconnexion`;
+  const lk=S.lookup||{}; $("#setLkSub").textContent=lk.source==="prefix"?"Préfixe seulement":((lk.hamqth_user||lk.qrz_user)?[lk.hamqth_user?"HamQTH":"",lk.qrz_user?"QRZ":""].filter(Boolean).join(" + ")+" · villes":"Préfixes et villes (aucun compte)");
+}
+
+/* ---------- Navigation : pages et sous-menus ---------- */
+const PAGES={"op":"Opération","horaires":"Horaires","vent":"Vent","passages":"Passages satellites","suivi":"Suivi (cible)","trafic":"Trafic","reglages":"Réglages",
+  "reglages/station":"Station","reglages/recherche":"Recherche d'indicatifs","reglages/controleur":"Contrôleur","reglages/course":"Course du rotor","reglages/calibration":"Calibration",
+  "reglages/securite":"Sécurité","reglages/courriels":"Courriels","reglages/ha":"Home Assistant","reglages/app":"Application mobile","reglages/systeme":"Système","reglages/compte":"Compte"};
+const OLD={"rotor":"op","grid":"op","presets":"op","sched":"horaires","setup":"reglages/controleur","wsjtx":"op"};
+let route="op", filledOnce=false;
+function closeDrawer(){ $("#drawer").classList.remove("open"); $("#scrim").classList.remove("open"); }
+function openDrawer(){ $("#drawer").classList.add("open"); $("#scrim").classList.add("open"); }
+function applyRoute(){
+  let r=decodeURIComponent(location.hash.slice(1))||"";
+  r=OLD[r]||r; if(!PAGES[r]){ try{ r=localStorage.getItem("rw_route")||"op"; }catch(e){ r="op"; } if(!PAGES[r]) r="op"; }
+  route=r;
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.dataset.page===r));
+  document.querySelectorAll("[data-route]").forEach(a=>a.classList.toggle("on",
+    a.dataset.route===r || (a.dataset.route==="reglages" && r.startsWith("reglages/") && !a.closest(".menusub"))));
+  const sub=r.startsWith("reglages/");
+  $("#backBtn").classList.toggle("hidden",!sub);
+  $("#pageTitle").textContent=(sub&&!matchMedia("(max-width:760px)").matches?TR("Réglages")+" › ":"")+TR(PAGES[r]);
+  document.title=(S.callsign?S.callsign+" · ":"")+TR(PAGES[r])+" · RotorWeb";
+  try{ localStorage.setItem("rw_route",r); }catch(e){}
+  if(r.startsWith("reglages")) fillSettings();
+  if(r==="trafic"){ const c=$("#console"); c.scrollTop=c.scrollHeight; }
+  if(r==="suivi") askPasses();
+  if(r==="passages") askSatPasses();
+  if(r==="op") applyLayout();
+  closeDrawer(); window.scrollTo(0,0);
+}
+function go(r){ if(location.hash==="#"+r) applyRoute(); else location.hash=r; }
+window.addEventListener("hashchange",applyRoute);
+$("#menuBtn").onclick=openDrawer; $("#tabMenu").onclick=openDrawer; $("#scrim").onclick=closeDrawer;
+$("#backBtn").onclick=()=>go("reglages");
+applyRoute();
+
+/* ---------- Application installable (PWA) ---------- */
+let installEvt=null;
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+function renderInstall(){
+  const box=$("#installBox"), btn=$("#installBtn"), ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  btn.classList.toggle("hidden",!installEvt);
+  if(standalone) box.textContent="✔ RotorWeb est installé comme application.";
+  else if(installEvt) box.textContent="Ajoute RotorWeb à ton écran d'accueil, en plein écran comme une vraie app.";
+  else if(ios) box.innerHTML="Sur iPhone : touche <b>Partager</b> ⬆ puis <b>Sur l'écran d'accueil</b>.";
+  else if(!window.isSecureContext) box.innerHTML="Sur Android : menu <b>⋮</b> → <b>Ajouter à l'écran d'accueil</b>.<br>Pour une app en plein écran, la page doit être en <b>HTTPS</b> (voir le README, section mobile).";
+  else box.innerHTML="Menu <b>⋮</b> du navigateur → <b>Installer l'application</b>.";
+}
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); installEvt=e; renderInstall(); });
+window.addEventListener("appinstalled",()=>{ installEvt=null; toast("Application installée","ok"); renderInstall(); });
+$("#installBtn").onclick=async()=>{ if(!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt=null; renderInstall(); };
+if("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("/sw.js").catch(()=>{});
+renderInstall();
+
+if(LANG==="en"){ loadI18n().then(()=>{ document.documentElement.lang="en"; trNode(document.body); relabelDays(); applyRoute(); }).catch(()=>{}); }
+applyLayout();
+connect();
+</script>
+</body>
+</html>
