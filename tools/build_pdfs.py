@@ -21,8 +21,36 @@ th,td{border:1px solid #c8d3e1;padding:4px 7px;text-align:left;vertical-align:to
 blockquote{border-left:4px solid #2f81f7;background:#f2f7fe;margin:8px 0;padding:6px 12px}
 li{margin:2px 0}"""
 
+COVER_CSS = """@page{size:Letter;margin:0}html,body{margin:0;padding:0}
+.c{position:relative;width:8.5in;height:11in;overflow:hidden;background:#0b1220}
+.c img{width:100%;height:100%;object-fit:cover;display:block}
+.v{position:absolute;left:0;right:0;top:2.42in;text-align:center;font:600 15pt 'DejaVu Sans',Arial,sans-serif;
+color:#9fb7d6;letter-spacing:.04em}"""
+
+
+def chrome_pdf(html, out):
+    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
+        f.write(html)
+    subprocess.run(["google-chrome", "--headless=new", "--no-sandbox", "--disable-gpu", "--no-pdf-header-footer",
+                    "--allow-file-access-from-files", f"--print-to-pdf={out}", f"file://{f.name}"],
+                   check=True, capture_output=True)
+
+
+def cover_pdf(lang, out):
+    """Page couverture (logo/couvertures/couverture-xx-200ppp.jpg) + numéro de version."""
+    img = ROOT / "logo" / "couvertures" / f"couverture-{lang}-200ppp.jpg"
+    if not img.exists():
+        return False
+    html = (f'<!doctype html><html><head><meta charset="utf-8"><style>{COVER_CSS}</style></head><body>'
+            f'<div class="c"><img src="file://{img}"><div class="v">Version {V}</div></div></body></html>')
+    chrome_pdf(html, out)
+    return True
+
+
 def build(src, out, lang):
     md = (ROOT / src).read_text(encoding="utf-8")
+    # la bannière GitHub du README n'a pas sa place dans le PDF (il a sa couverture)
+    md = re.sub(r"(?m)^.*logo/banniere[^\n]*\n", "", md)
     # une liste qui suit directement une ligne de texte : il faut une ligne vide avant
     md = re.sub(r"(?m)^([^\n\-*\d\s|>`#][^\n]*)\n(- |\d+\. )", r"\1\n\n\2", md)
     # blocs de code indentés dans les listes : on les sort de la liste pour qu'ils restent des blocs
@@ -45,11 +73,20 @@ def build(src, out, lang):
         html_parts.append(part)
     body = "".join(html_parts)
     html = f'<!doctype html><html lang="{lang}"><head><meta charset="utf-8"><style>{CSS}</style></head><body>{body}</body></html>'
-    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
-        f.write(html)
-    footer = '<div style="font-size:8px;width:100%;text-align:center;color:#777">RotorWeb v' + V + ' — <span class="pageNumber"></span>/<span class="totalPages"></span></div>'
-    subprocess.run(["google-chrome", "--headless=new", "--no-sandbox", "--disable-gpu", "--no-pdf-header-footer",
-                    f"--print-to-pdf={ROOT / out}", f"file://{f.name}"], check=True, capture_output=True)
+    body_pdf = Path(tempfile.mktemp(suffix=".pdf"))
+    cov_pdf = Path(tempfile.mktemp(suffix=".pdf"))
+    chrome_pdf(html, body_pdf)
+    if cover_pdf(lang, cov_pdf):
+        from pypdf import PdfWriter
+        w = PdfWriter()
+        w.append(str(cov_pdf))
+        w.append(str(body_pdf))
+        w.compress_identical_objects()
+        with open(ROOT / out, "wb") as f:
+            w.write(f)
+    else:
+        print("  (couverture absente : logo/couvertures/)", file=sys.stderr)
+        body_pdf.replace(ROOT / out)
     print(out)
 
 if __name__ == "__main__":

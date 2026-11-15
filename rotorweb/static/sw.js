@@ -1,8 +1,9 @@
 // RotorWeb — service worker minimal.
 // Le rotor se contrôle en direct : rien n'est mis en cache, sauf les icônes.
 // Sans réseau, une page « hors ligne » s'affiche au lieu d'une erreur.
-const CACHE = "rotorweb-v1.7";
-const ASSETS = ["/icon-192.png", "/icon-512.png", "/favicon.png"];
+const CACHE = "rotorweb-v2.1";
+const ASSETS = ["/icon-192.png", "/icon-512.png", "/icon-maskable-192.png", "/icon-maskable-512.png",
+                "/favicon.png", "/favicon.svg", "/logo.svg", "/wordmark.svg", "/logo-horizontal.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

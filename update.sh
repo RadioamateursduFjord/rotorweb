@@ -78,6 +78,8 @@ step "$(t "Dépendances Python" "Python packages")"
 "$APP_DIR/venv/bin/pip" install -q --upgrade -r "$APP_DIR/requirements.txt"
 
 # ---- Migrations ------------------------------------------------------
+# v2.1 : nouveaux visuels seulement (logo, icônes, couvertures des guides) — rien à migrer.
+#        Les migrations ci-dessous restent toutes rejouables : on peut passer de 1.6 ou 2.0 directement à 2.1.
 # v1.7 / v2.0 : actions système (arrêt / redémarrage du Pi, mises à jour en ligne vérifiées)
 install -o root -g root -m 755 "$SRC_DIR/system/rotorweb-helper" "$HELPER"
 install -d -o root -g root -m 755 "$PUBDIR"

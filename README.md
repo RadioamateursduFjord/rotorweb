@@ -1,9 +1,11 @@
-# RotorWeb v2.0 — Guide d'installation et d'utilisation
+![RotorWeb — Contrôle d'antenne radioamateur via le web](logo/banniere-github-1280x640.jpg)
+
+# RotorWeb v2.1 — Guide d'installation et d'utilisation
 
 Contrôle de rotor d'antenne par page web sur Raspberry Pi : K3NG / Yaesu GS-232, Easycomm, SPID Rot2Prog, Hy-Gain DCU-1, Hamlib, ou montage maison (Arduino, GPIO).
 
-> 📘 Ce guide existe en PDF : **GUIDE-RotorWeb-v2.0-FR.pdf** (English: **GUIDE-RotorWeb-v2.0-EN.pdf**).
-> 🔄 Mise à jour d'une version précédente : **MISE-A-JOUR-RotorWeb-v2.0-FR.pdf** et **CHANGELOG.md**.
+> 📘 Ce guide existe en PDF : **GUIDE-RotorWeb-v2.1-FR.pdf** (English: **GUIDE-RotorWeb-v2.1-EN.pdf**).
+> 🔄 Mise à jour d'une version précédente : **MISE-A-JOUR-RotorWeb-v2.1-FR.pdf** et **CHANGELOG.md**.
 
 ```
  PC (PowerSDR, WSJT-X, GridTracker, Gpredict…)              Téléphone / PC
@@ -15,6 +17,9 @@ Contrôle de rotor d'antenne par page web sur Raspberry Pi : K3NG / Yaesu GS-232
 ```
 
 ## 1. Nouveautés
+**v2.1**
+- **Nouvelle identité visuelle** : logo « Azimut » (icône de l'app, favicon, page de connexion, menu, carte Home Assistant), pictogrammes du menu redessinés, couvertures des guides PDF.
+
 **v2.0**
 - **Mises à jour en ligne** depuis la page : « Une nouvelle version est disponible — Mettre à jour », signature vérifiée, retour automatique si problème.
 - **Sauvegarde chiffrée** de tous les réglages, téléchargeable, et **restauration** (page, réinstallation, terminal).
@@ -31,11 +36,11 @@ Contrôle de rotor d'antenne par page web sur Raspberry Pi : K3NG / Yaesu GS-232
 Détails : `CHANGELOG.md`.
 
 ## 2. Installation
-1. Copie le dossier `rotorweb-v2.0` sur le Raspberry Pi (clé USB, `scp`…). Raspberry Pi OS Bookworm ou plus récent conseillé.
+1. Copie le dossier `rotorweb-v2.1` sur le Raspberry Pi (clé USB, `scp`…). Raspberry Pi OS Bookworm ou plus récent conseillé.
 2. Branche le contrôleur du rotor en USB.
 3. Lance :
    ```bash
-   cd rotorweb-v2.0
+   cd rotorweb-v2.1
    sudo ./install.sh
    ```
 4. Choisis la **langue** (Français / English). **Réinstallation ?** Donne le chemin de ta sauvegarde `.rwbackup` et son mot de passe : tout est restauré et les questions déjà réglées sont sautées. Sinon choisis le contrôleur : **d) Détecter automatiquement** (par défaut) ou un modèle de la liste, ou **s) Simulation** si tu n'as pas encore le matériel.
@@ -44,7 +49,7 @@ Détails : `CHANGELOG.md`.
 
 Le script donne au contrôleur le nom fixe `/dev/rotor`, crée le service qui démarre au boot et active les boutons d'arrêt du Pi.
 
-**Déjà installé ?** N'utilise pas `install.sh` : depuis la v2.0, la mise à jour se fait dans la page (section 14). Pour passer de la v1.6 ou v1.7 à la v2.0 : `sudo ./update.sh` une dernière fois à la main (voir le guide de mise à jour).
+**Déjà installé ?** N'utilise pas `install.sh` : depuis la v2.0, la mise à jour se fait dans la page (section 14). Pour passer de la v1.6 ou v1.7 à la v2.1 : `sudo ./update.sh` une dernière fois à la main (voir le guide de mise à jour).
 
 ## 3. Comptes et langue
 ```bash
@@ -194,6 +199,8 @@ unzip rotorweb-vX.Y.zip && cd rotorweb-vX.Y
 ./tools/release.sh               # publie sur GitHub (phrase de passe de la clé demandée)
 ```
 Le script vérifie le numéro de version et le CHANGELOG, crée le zip, `release.json` et sa signature, pousse le code sur `main` et crée la « Release » vX.Y. Les stations la voient dans les 24 h.
+
+Le dossier `logo/` (sources du logo, couvertures 300 ppp, bannière) va dans le dépôt GitHub mais **pas** dans le zip des stations. L'image d'aperçu du dépôt se téléverse à la main, une seule fois : GitHub ▸ dépôt ▸ **Settings** ▸ **Social preview** ▸ `logo/banniere-github-1280x640.jpg`. Pour regénérer les icônes : `python3 tools/make_logo.py --font space-grotesk-700.woff`.
 
 ## 17. Home Assistant
 Voir `homeassistant/LISEZMOI-HA.md`. Réglages ▸ **Home Assistant** : broker MQTT, utilisateur, mot de passe. L'appareil RotorWeb apparaît avec 26 entités (27 avec l'élévation), dont en v1.7 **Prochain bon passage satellite**, **Heure du prochain bon passage** et l'événement `passage_sat`. Carte boussole : copier `rotorweb-compass-card.js` dans `/config/www/` (option `passes: 4` pour la liste des passages).

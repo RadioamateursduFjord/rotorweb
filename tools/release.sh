@@ -42,6 +42,8 @@ step "Paquet $NAME.zip"
 cp -r "$SRC" "$OUT/$NAME"
 find "$OUT/$NAME" \( -name __pycache__ -o -name .git -o -name venv -o -name "*.pyc" \) -prune -exec rm -rf {} + 2>/dev/null || true
 rm -f "$OUT/$NAME"/config.json* "$OUT/$NAME"/state.json* "$OUT/$NAME"/*.rwbackup
+# logo/ (sources graphiques, couvertures 300 ppp, bannière) : dépôt GitHub seulement, pas dans le zip
+[[ -d "$OUT/$NAME/logo" ]] && mv "$OUT/$NAME/logo" "$OUT/logo-depot"
 (cd "$OUT" && zip -qr "$NAME.zip" "$NAME")
 SHA=$(sha256sum "$OUT/$NAME.zip" | cut -d' ' -f1)
 ok "$(du -h "$OUT/$NAME.zip" | cut -f1)  sha256 $SHA"
@@ -86,6 +88,7 @@ cd "$WORK/repo"
 git checkout -q -B main
 find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -r "$OUT/$NAME/." .
+[[ -d "$OUT/logo-depot" ]] && cp -r "$OUT/logo-depot" ./logo
 git add -A
 if git diff --cached --quiet; then ok "code déjà à jour"; else
   git -c user.name="${GIT_NAME:-RotorWeb release}" -c user.email="${GIT_EMAIL:-rotorweb@users.noreply.github.com}" \

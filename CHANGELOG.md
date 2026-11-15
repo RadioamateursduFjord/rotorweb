@@ -5,6 +5,22 @@ Since v2.0: Settings ▸ System → **Update** in the page. Otherwise: `sudo ./u
 
 ---
 
+## v2.1 — 2026-11-15
+
+> Mise à jour possible depuis la **v2.0** (bouton **⬆ Mettre à jour** dans la page) ou directement depuis la **v1.6 / v1.7** (`sudo ./update.sh`). Aucun réglage ne change.
+
+### Nouveautés
+- **Nouveau logo « Azimut »** : cadran gradué, antenne Yagi orientée et faisceau vert.
+  - Icône de l'application (Android, avec une version adaptée aux icônes rondes ; iPhone), favicon de l'onglet, page de connexion, menu, en-tête et carte boussole Home Assistant.
+- **Pictogrammes du menu redessinés** dans le style du logo (trait bleu, détail vert) : ils s'affichent pareil sur tous les appareils, au lieu des émojis qui changeaient d'un téléphone à l'autre.
+- **Guides PDF avec page couverture** (français et anglais).
+- Dépôt GitHub : bannière bilingue et dossier `logo/` (fichiers du logo, couvertures en haute résolution). Ce dossier n'est pas dans le paquet des stations.
+
+### Remarque
+- Sur le cellulaire, l'icône de l'app installée peut garder l'ancien dessin quelques jours (le téléphone la met à jour seul). Pour la changer tout de suite : retirer l'app de l'écran d'accueil puis la réinstaller.
+
+---
+
 ## v2.0 — 2026-11-14
 
 > Mise à jour possible directement depuis la **v1.6** : `update.sh` fait aussi les adaptations de la v1.7 (voir plus bas).
@@ -88,6 +104,20 @@ Since v2.0: Settings ▸ System → **Update** in the page. Otherwise: `sudo ./u
 
 ---
 ---
+
+## v2.1 — 2026-11-15 (English)
+
+> Update from **v2.0** (**⬆ Update** button in the page) or straight from **v1.6 / v1.7** (`sudo ./update.sh`). No setting changes.
+
+### New
+- **New “Azimuth” logo**: graduated dial, pointed Yagi antenna and green beam.
+  - App icon (Android, with a version for round icons; iPhone), tab favicon, login page, menu, header and Home Assistant compass card.
+- **Redrawn menu icons** in the logo style (blue line, green detail): they look the same on every device, instead of emojis that changed from one phone to another.
+- **PDF guides with a cover page** (French and English).
+- GitHub repository: bilingual banner and `logo/` folder (logo files, high-resolution covers). This folder is not in the stations' package.
+
+### Note
+- On the phone, the installed app icon may keep the old drawing for a few days (the phone updates it by itself). To change it right away: remove the app from the home screen and install it again.
 
 ## v2.0 — 2026-11-14 (English)
 

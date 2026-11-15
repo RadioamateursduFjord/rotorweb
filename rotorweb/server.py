@@ -43,7 +43,7 @@ from rotorweb.geo import angdiff, grid_bearing, valid_grid
 from rotorweb.ha_mqtt import HABridge, MODE_FROM_LABEL
 from rotorweb.drivers import DRIVERS, DRIVER_MAP, DIY_DRIVERS, DIYDriver, NotCalibrated, make_driver
 
-VERSION = "2.0"
+VERSION = "2.1"
 BASE_DIR = Path(__file__).resolve().parent
 log = logging.getLogger("rotorweb")
 
@@ -1468,7 +1468,8 @@ class Controller(AutomationMixin, TrackingMixin, SatListMixin, UpdaterMixin):
 
     # ---------- web / authentification ----------
     PUBLIC = {"/login", "/manifest.webmanifest", "/sw.js", "/icon-192.png", "/icon-512.png", "/i18n-en.json",
-              "/apple-touch-icon.png", "/favicon.png", "/ha/rotorweb-compass-card.js"}
+              "/apple-touch-icon.png", "/favicon.png", "/ha/rotorweb-compass-card.js",
+              "/favicon.svg", "/logo.svg", "/wordmark.svg", "/logo-horizontal.svg", "/icon-maskable-192.png", "/icon-maskable-512.png"}
 
     def current_user(self, request):
         return auth.check_token(self.cfg["secret"], self.users(), request.cookies.get("rw_session", ""))
@@ -1494,7 +1495,9 @@ class Controller(AutomationMixin, TrackingMixin, SatListMixin, UpdaterMixin):
         name = request.path.lstrip("/").replace("ha/", "", 1)
         types = {"manifest.webmanifest": "application/manifest+json", "sw.js": "text/javascript",
                  "i18n-en.json": "application/json",
-                 "rotorweb-compass-card.js": "text/javascript"}
+                 "rotorweb-compass-card.js": "text/javascript",
+                 "favicon.svg": "image/svg+xml", "logo.svg": "image/svg+xml", "wordmark.svg": "image/svg+xml",
+                 "logo-horizontal.svg": "image/svg+xml"}
         resp = web.FileResponse(BASE_DIR / "static" / name, headers={"Cache-Control": "no-cache"})
         if name in types:
             resp.content_type = types[name]
@@ -1602,12 +1605,12 @@ class Controller(AutomationMixin, TrackingMixin, SatListMixin, UpdaterMixin):
 LOGIN_HTML = """<!doctype html><html lang="{{LANG}}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e1319"><link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.png" sizes="32x32">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <title>{{TITLE}} · RotorWeb — {{Connexion}}</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0e1319;color:#e6edf3;
 font-family:system-ui,sans-serif}form{box-sizing:border-box;background:#161e28;padding:28px;border-radius:16px;width:min(340px,90vw);
-border:1px solid #2a3747}img{width:64px;height:64px;display:block;margin:0 auto 12px;border-radius:14px}
+border:1px solid #2a3747}img{width:72px;height:72px;display:block;margin:0 auto 10px}img.wm{width:auto;height:44px;margin:-8px auto 6px}
 h1{font-size:20px;margin:0 0 4px;text-align:center}p{color:#8b9bb0;margin:0 0 18px;text-align:center}
 label{display:block;font-size:13px;color:#8b9bb0;margin:0 0 4px}
 input,button{width:100%;box-sizing:border-box;padding:13px;border-radius:10px;font-size:16px}
@@ -1618,7 +1621,7 @@ button{background:#2f81f7;color:#fff;border:0;font-weight:600;cursor:pointer}
 code{background:#0e1319;padding:2px 6px;border-radius:4px;color:#e6edf3}
 .lng{display:block;text-align:center;margin-top:14px;color:#8b9bb0;font-size:13px}</style>
 </head><body><form method="post" action="/login">
-<img src="/icon-192.png" alt=""><h1>{{TITLE}}</h1><p>{{Contrôle du rotor}}</p>
+<img src="/logo.svg" alt=""><img class="wm" src="/wordmark.svg" alt="RotorWeb"><h1>{{TITLE}}</h1><p>{{Contrôle du rotor}}</p>
 <label for="u">{{Utilisateur}}</label>
 <input id="u" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
 <label for="p">{{Mot de passe}}</label>
@@ -1641,7 +1644,8 @@ async def main_async(args):
     app.router.add_post("/api/backup", ctrl.api_backup)
     app.router.add_post("/api/restore", ctrl.api_restore)
     for f in ("manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "i18n-en.json",
-              "apple-touch-icon.png", "favicon.png"):
+              "apple-touch-icon.png", "favicon.png", "favicon.svg", "logo.svg", "wordmark.svg", "logo-horizontal.svg",
+              "icon-maskable-192.png", "icon-maskable-512.png"):
         app.router.add_get("/" + f, ctrl.static_file)
     app.router.add_get("/ha/rotorweb-compass-card.js", ctrl.static_file)
     runner = web.AppRunner(app)

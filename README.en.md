@@ -1,9 +1,11 @@
-# RotorWeb v2.0 — Installation and user guide
+![RotorWeb — Web-based amateur radio antenna control](logo/banniere-github-1280x640.jpg)
+
+# RotorWeb v2.1 — Installation and user guide
 
 Web control of an antenna rotor on a Raspberry Pi: K3NG / Yaesu GS-232, Easycomm, SPID Rot2Prog, Hy-Gain DCU-1, Hamlib, or a home build (Arduino, GPIO).
 
-> 📘 This guide is also a PDF: **GUIDE-RotorWeb-v2.0-EN.pdf** (en français : **GUIDE-RotorWeb-v2.0-FR.pdf**).
-> 🔄 Updating from an older version: **UPDATE-RotorWeb-v2.0-EN.pdf** and **CHANGELOG.md**.
+> 📘 This guide is also a PDF: **GUIDE-RotorWeb-v2.1-EN.pdf** (en français : **GUIDE-RotorWeb-v2.1-FR.pdf**).
+> 🔄 Updating from an older version: **UPDATE-RotorWeb-v2.1-EN.pdf** and **CHANGELOG.md**.
 
 ```
  PC (PowerSDR, WSJT-X, GridTracker, Gpredict…)              Phone / PC
@@ -15,6 +17,9 @@ Web control of an antenna rotor on a Raspberry Pi: K3NG / Yaesu GS-232, Easycomm
 ```
 
 ## 1. What's new
+**v2.1**
+- **New visual identity**: “Azimuth” logo (app icon, favicon, login page, menu, Home Assistant card), redrawn menu icons, PDF guide covers.
+
 **v2.0**
 - **Online updates** from the page: “A new version is available — Update”, signature checked, automatic return on trouble.
 - **Encrypted backup** of every setting, downloadable, and **restore** (page, reinstallation, terminal).
@@ -31,11 +36,11 @@ Web control of an antenna rotor on a Raspberry Pi: K3NG / Yaesu GS-232, Easycomm
 Details: `CHANGELOG.md`.
 
 ## 2. Installation
-1. Copy the `rotorweb-v2.0` folder to the Raspberry Pi (USB stick, `scp`…). Raspberry Pi OS Bookworm or newer recommended.
+1. Copy the `rotorweb-v2.1` folder to the Raspberry Pi (USB stick, `scp`…). Raspberry Pi OS Bookworm or newer recommended.
 2. Plug the rotor controller into USB.
 3. Run:
    ```bash
-   cd rotorweb-v2.0
+   cd rotorweb-v2.1
    sudo ./install.sh
    ```
 4. Choose the **language** (Français / English). **Reinstalling?** Give the path of your `.rwbackup` backup and its password: everything is restored and already-set questions are skipped. Otherwise choose the controller: **d) Detect automatically** (default) or a model from the list, or **s) Simulation** if you don't have the hardware yet.
@@ -44,7 +49,7 @@ Details: `CHANGELOG.md`.
 
 The script gives the controller the fixed name `/dev/rotor`, creates the service that starts at boot and enables the Pi power buttons.
 
-**Already installed?** Don't use `install.sh`: since v2.0, updates are done in the page (section 14). To go from v1.6 or v1.7 to v2.0: `sudo ./update.sh` one last time by hand (see the update guide).
+**Already installed?** Don't use `install.sh`: since v2.0, updates are done in the page (section 14). To go from v1.6 or v1.7 to v2.1: `sudo ./update.sh` one last time by hand (see the update guide).
 
 ## 3. Accounts and language
 ```bash
@@ -194,6 +199,8 @@ unzip rotorweb-vX.Y.zip && cd rotorweb-vX.Y
 ./tools/release.sh               # publishes on GitHub (key passphrase asked)
 ```
 The script checks the version number and the CHANGELOG, builds the zip, `release.json` and its signature, pushes the code to `main` and creates the vX.Y “Release”. Stations see it within 24 h.
+
+The `logo/` folder (logo sources, 300 dpi covers, banner) goes into the GitHub repository but **not** into the stations' zip. The repository preview image is uploaded by hand, once: GitHub ▸ repository ▸ **Settings** ▸ **Social preview** ▸ `logo/banniere-github-1280x640.jpg`. To regenerate the icons: `python3 tools/make_logo.py --font space-grotesk-700.woff`.
 
 ## 17. Home Assistant
 See `homeassistant/LISEZMOI-HA.md`. Settings ▸ **Home Assistant**: MQTT broker, user, password. The RotorWeb device appears with 26 entities (27 with elevation), including in v1.7 **Next good satellite pass**, **Time of the next good pass** and the `passage_sat` event. Compass card: copy `rotorweb-compass-card.js` to `/config/www/` (`passes: 4` option for the pass list); it shows French or English following the HA language.

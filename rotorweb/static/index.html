@@ -6,7 +6,8 @@
 <title>RotorWeb</title>
 <meta name="theme-color" content="#0e1319">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/favicon.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -20,6 +21,7 @@
   --accent:#2f81f7; --accent-txt:#fff;
   --ok:#2ea043; --warn:#d29922; --bad:#e5484d;
   --radius:14px;
+  --logo-b:#58a6ff; --logo-g:#3fb950;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -75,7 +77,11 @@ main{padding:14px 16px 24px}
 .page.on{display:block}
 .page.cards.on{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
 .menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;font-weight:500}
-.menu a span{width:22px;text-align:center}
+.menu a span{width:22px;display:flex;justify-content:center}
+.ico{width:22px;height:22px;fill:none;stroke:var(--logo-b);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico .g{stroke:var(--logo-g)}.ico .gf{fill:var(--logo-g);stroke:none}
+.hlogo{width:30px;height:30px;flex:none;margin-right:-4px}
+.dlogo{display:block;height:30px;width:auto;margin:4px 12px 14px}
 .menu a:hover{background:var(--panel)}
 .menu a.on{background:var(--panel2);color:var(--text);font-weight:600}
 .menusub{margin:2px 0 6px}
@@ -280,6 +286,7 @@ progress{width:100%;margin-top:8px}
   header{padding:8px 10px;gap:8px;padding-top:calc(8px + env(safe-area-inset-top))}
   .brand{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
   .brand #call{display:none}
+  .hlogo{display:none}
   .brand small{font-size:16px;font-weight:600;color:var(--text);margin-left:0}
   .spacer{display:none}
   #estop .lg{display:none} #estop .sm{display:inline}
@@ -304,18 +311,19 @@ progress{width:100%;margin-top:8px}
     backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   #tabbar a,#tabbar button{flex:1;background:none;border:0;border-radius:10px;padding:6px 1px;font-size:11px;min-width:0;color:var(--muted);text-decoration:none;
     display:flex;flex-direction:column;align-items:center;gap:2px}
-  #tabbar a span,#tabbar button span{font-size:20px;line-height:1;filter:grayscale(1);opacity:.7}
+  #tabbar a span,#tabbar button span{font-size:20px;line-height:1;opacity:.6;display:flex}
   #tabbar a.on{color:var(--text);background:var(--panel2)}
-  #tabbar a.on span{filter:none;opacity:1}
+  #tabbar a.on span{opacity:1}
 }
 @media (display-mode:standalone){ header{padding-top:calc(10px + env(safe-area-inset-top))} }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-op" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12L18.4 5.6M14.2 7.6l2.2 2.2M16.2 5.8l2 2"/><path class="g" d="M18.4 5.6l-1.8.2M18.4 5.6l-.2 1.8"/><circle class="gf" cx="12" cy="12" r="1.9"/></symbol><symbol id="i-hor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5"/><path class="g" d="M12 12l3.5 2"/><path d="M12 3.6v1.2M12 19.2v1.2M3.6 12h1.2M19.2 12h1.2"/></symbol><symbol id="i-vent" viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3"/><path class="g" d="M3 14h15a3 3 0 1 1-3 3"/><path d="M3 19h6"/></symbol><symbol id="i-sat" viewBox="0 0 24 24"><rect x="9.5" y="9.5" width="5" height="5" rx="1" transform="rotate(45 12 12)"/><path d="M6.3 6.3L3.5 9.1 6 11.6l2.8-2.8M17.7 17.7l2.8-2.8-2.5-2.5-2.8 2.8"/><path class="g" d="M15.5 4.2a8 8 0 0 1 4.3 4.3M14.6 6.6a5 5 0 0 1 2.8 2.8"/></symbol><symbol id="i-suivi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle class="gf" cx="12" cy="12" r="1.6"/></symbol><symbol id="i-trafic" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M10.5 8.5h6M10.5 12h6M10.5 15.5h4"/><circle class="gf" cx="7.6" cy="8.5" r="1.3"/><circle cx="7.6" cy="12" r=".6"/><circle cx="7.6" cy="15.5" r=".6"/></symbol><symbol id="i-reg" viewBox="0 0 24 24"><path d="M12 2.8l1.6 2.3 2.7-.7.6 2.7 2.7.7-.7 2.7 2.3 1.5-2.3 1.6.7 2.7-2.7.6-.6 2.7-2.7-.7L12 21.2l-1.6-2.3-2.7.7-.6-2.7-2.7-.6.7-2.7L2.8 12l2.3-1.5-.7-2.7 2.7-.7.6-2.7 2.7.7z"/><circle class="g" cx="12" cy="12" r="3"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16"/><path class="g" d="M4 17h10"/></symbol></svg>
 <header>
   <button id="menuBtn" class="iconbtn" title="Menu" aria-label="Menu">☰</button>
   <button id="backBtn" class="iconbtn hidden" title="Retour" aria-label="Retour">‹</button>
-  <div class="brand"><span id="call">RotorWeb</span><small id="pageTitle"></small></div>
+  <img src="/logo.svg" class="hlogo" alt=""><div class="brand"><span id="call">RotorWeb</span><small id="pageTitle"></small></div>
   <span id="conn" class="pill">connexion…</span>
   <span id="hdrAz" class="hdraz">---°</span>
   <div class="spacer"></div>
@@ -325,13 +333,14 @@ progress{width:100%;margin-top:8px}
 <div class="layout">
 <aside id="drawer" aria-label="Menu">
   <nav class="menu">
-    <a href="#op" data-route="op"><span>🧭</span>Opération</a>
-    <a href="#horaires" data-route="horaires"><span>🕒</span>Horaires</a>
-    <a href="#vent" data-route="vent"><span>💨</span>Vent</a>
-    <a href="#passages" data-route="passages"><span>🛰</span>Passages satellites</a>
-    <a href="#suivi" data-route="suivi"><span>🌙</span>Suivi (cible)</a>
-    <a href="#trafic" data-route="trafic"><span>📜</span>Trafic</a>
-    <a href="#reglages" data-route="reglages"><span>⚙</span>Réglages</a>
+    <img src="/logo-horizontal.svg" class="dlogo" alt="RotorWeb">
+    <a href="#op" data-route="op"><span><svg class="ico" aria-hidden="true"><use href="#i-op"/></svg></span>Opération</a>
+    <a href="#horaires" data-route="horaires"><span><svg class="ico" aria-hidden="true"><use href="#i-hor"/></svg></span>Horaires</a>
+    <a href="#vent" data-route="vent"><span><svg class="ico" aria-hidden="true"><use href="#i-vent"/></svg></span>Vent</a>
+    <a href="#passages" data-route="passages"><span><svg class="ico" aria-hidden="true"><use href="#i-sat"/></svg></span>Passages satellites</a>
+    <a href="#suivi" data-route="suivi"><span><svg class="ico" aria-hidden="true"><use href="#i-suivi"/></svg></span>Suivi (cible)</a>
+    <a href="#trafic" data-route="trafic"><span><svg class="ico" aria-hidden="true"><use href="#i-trafic"/></svg></span>Trafic</a>
+    <a href="#reglages" data-route="reglages"><span><svg class="ico" aria-hidden="true"><use href="#i-reg"/></svg></span>Réglages</a>
     <div class="menusub" id="menuSub">
       <a href="#reglages/station" data-route="reglages/station">Station</a>
       <a href="#reglages/recherche" data-route="reglages/recherche">Recherche d'indicatifs</a>
@@ -921,10 +930,10 @@ progress{width:100%;margin-top:8px}
 </div>
 
 <nav id="tabbar" aria-label="Navigation">
-  <a href="#op" data-route="op"><span>🧭</span>Opération</a>
-  <a href="#horaires" data-route="horaires"><span>🕒</span>Horaires</a>
-  <a href="#trafic" data-route="trafic"><span>📜</span>Trafic</a>
-  <button id="tabMenu"><span>☰</span>Menu</button>
+  <a href="#op" data-route="op"><span><svg class="ico" aria-hidden="true"><use href="#i-op"/></svg></span>Opération</a>
+  <a href="#horaires" data-route="horaires"><span><svg class="ico" aria-hidden="true"><use href="#i-hor"/></svg></span>Horaires</a>
+  <a href="#trafic" data-route="trafic"><span><svg class="ico" aria-hidden="true"><use href="#i-trafic"/></svg></span>Trafic</a>
+  <button id="tabMenu"><span><svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg></span>Menu</button>
 </nav>
 
 <dialog id="schedDlg">

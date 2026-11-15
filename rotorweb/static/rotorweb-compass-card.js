@@ -16,7 +16,7 @@
  *
  * Les entités sont trouvées automatiquement grâce à l'attribut rotorweb_role.
  */
-const RW_VERSION = "1.7";
+const RW_VERSION = "2.1";
 // Textes de la carte : français ou anglais selon la langue de l'utilisateur Home Assistant
 const RW_TXT = {
   fr: { rearm: "Réarmer", ovr: "Ignorer 15 min", missing: "Aucune entité RotorWeb trouvée. Active l'intégration Home Assistant dans RotorWeb (⚙ Réglages).",
@@ -112,6 +112,7 @@ class RotorWebCompassCard extends HTMLElement {
       <style>${RotorWebCompassCard.styles}</style>
       <ha-card>
         <div class="head">
+          <svg class="rwlogo" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L66.9 13.75 A40 40 0 0 1 86.25 33.1 Z" fill="#2ea043" fill-opacity=".3"/><circle cx="50" cy="50" r="40" fill="none" stroke="#388bfd" stroke-width="7"/><g transform="rotate(-45 50 50)"><path d="M50 50H84M62 38V62M76 42V58" stroke="#388bfd" stroke-width="7" stroke-linecap="round" fill="none"/></g><circle cx="50" cy="50" r="7" fill="#2ea043"/></svg>
           <div class="title"></div>
           <span class="chip status"></span>
         </div>
@@ -328,6 +329,7 @@ RotorWebCompassCard.styles = `
   .hidden { display: none !important; }
   .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .title { font-size: 18px; font-weight: 600; flex: 1; }
+  .rwlogo { width: 26px; height: 26px; flex: none; }
   .chip { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--rw-line); color: var(--rw-muted); }
   .chip.ok { color: var(--rw-ok); border-color: var(--rw-ok); } .chip.bad { color: var(--rw-bad); border-color: var(--rw-bad); }
   .banner { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 600;
